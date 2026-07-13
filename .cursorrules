@@ -1,0 +1,64 @@
+You are an expert Senior Frontend Engineer with an eye for clean, human-designed, and highly professional B2B user interfaces. I need you to build a production-ready Frontend Dashboard Prototype for a Mangosteen (Manggis) Management System.
+
+CRITICAL DESIGN PRINCIPLE: Avoid generic "AI-generated" looks. No unnecessary badges, no colorful gradients where they don't belong, no oversized floating icons inside cards, and no visual clutter. Make it look like a real, minimalist software designed by a human engineer for operational use in a warehouse/kiosk.
+
+### 🛠️ TECH STACK
+- Framework: Next.js (App Router, React)
+- Styling: Tailwind CSS
+- Icons: lucide-react (Use very sparingly, only for actual UI utility)
+- Charts: recharts (Keep it dead simple, clean lines, no heavy grid lines)
+- State: Local React state with mock data
+
+### 📏 SCREEN CONSTRAINT & ASPECT RATIO
+- Aspect Ratio: Strict 9:16 portrait kiosk view.
+- Hardcoded Canvas: Wrap the main container in `w-[1080px] h-[1920px] overflow-hidden flex flex-col justify-between p-8 bg-[#f8fafc] text-slate-900`.
+- Behavior: It must fit perfectly within these exact pixel dimensions without any vertical scrollbars or horizontal layout leaks.
+
+### 🎨 MINIMALIST DESIGN SYSTEM & THEME
+- Primary Color: Deep Mangosteen Purple (Use `#4A0E2E` or `text-[#4A0E2E]` / `bg-[#4A0E2E]` only for headers or primary indicators).
+- Accent Status: Use standard flat semantic colors (`text-emerald-600` for positive/safe data, `text-amber-600` for warnings). No glowing shadows.
+- Typography: Clean sans-serif, high contrast, precise font weights, and perfectly readable text tracking.
+- Cards: Simple flat borders with extremely subtle shadows (`border border-slate-200/60 bg-white rounded-xl shadow-[0_2px_4px_rgba(0,0,0,0.02)]`).
+
+### 📋 SCREEN STRUCTURE (FULLY INDONESIAN - TOP TO BOTTOM)
+
+1. HEADER SECTION (Minimalist Bar):
+   - Left: Small subtitle "PEMANTAUAN REAL-TIME" and main title "DASHBOARD MONITORING MANGGIS" in bold purple.
+   - Right: Live digital clock (Format: HH.MM.SS) and the date "Minggu, 12 Juli 2026".
+   - Status: A clean flat row containing a small green dot with "Terhubung" text and a simple text link button "Perbarui otomatis dalam 2:00".
+
+2. RINGKASAN DATA (2x2 Clean Grid):
+   - Card 1: TOTAL STOK TERSEDIA -> "1.250 Kg" (Large bold number, small text label).
+   - Card 2: SIAP EKSPOR -> "450 Kg".
+   - Card 3: RATA-RATA HARGA HARI INI -> "Rp 55.000 / Kg" (Include a small, clean "+4,5%" inline text trend).
+   - Card 4: PERINGATAN KUALITAS -> "50 Kg" (Marked with subtle amber text, subtext: "Butuh sortir segera • Lihat detail ->").
+
+3. TREN HARGA — 7 HARI TERAKHIR (Recharts Line Chart):
+   - Clean area/line chart with a thin purple line (`#4A0E2E`) showing price fluctuations.
+   - X-Axis Labels: "Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min".
+   - Y-Axis Labels: Must use Indonesian standard format shorthand for thousands (e.g., "51rb", "53rb", "54rb", "56rb") or full numbers ("51.000", "53.000"). No English "k" format.
+   - Grid lines: Very faint or hidden completely to maximize data clarity.
+
+4. STOK BERDASARKAN KUALITAS (Progress Bars):
+   - Breakdown of categories with clean horizontal progress indicators:
+     - Kelas A — Super / Ekspor: 600 Kg (Bar uses solid Deep Purple color, subtext: "48% dari total" in clean slate-500).
+     - Kelas B — Standar / Lokal: 400 Kg (Bar uses Medium Purple opacity).
+     - Kelas C — Industri Pengolahan: 250 Kg (Bar uses Light Purple opacity).
+   - Ensure the percentage subtexts have high readability contrast against the light background.
+
+5. AKTIVITAS TERBARU (Flat Operations Log):
+   - A perfectly aligned list limited to exactly 6 items to cleanly balance the vertical space.
+   - Examples: 
+     - "10:30 — Diterima 200 Kg dari Petani A (Desa Sukamaju)"
+     - "09:15 — Dikirim 400 Kg ke Pembeli X — PT Ekspor Nusantara"
+     - "08:45 — Cek kualitas selesai — 150 Kg dinaikkan ke Kelas A"
+   - Use absolute flat text formatting with clean aligned timestamps on the right side.
+
+6. FOOTER CONTAINER:
+   - Centered or left-aligned flat text: "Terakhir Diperbarui: 12 Jul 2026, 17.16.31". 
+   - Clean, border-only refresh button text next to it if space permits, completely flat.
+
+### ⚙️ CODE GENERATION RULES
+- Output a single, beautifully organized React/Next.js component file.
+- Use strict spacing classes (`gap-4`, `p-6`) optimized to keep the dashboard tightly packaged within the 1920px height ceiling without triggering overflow.
+- Do not add random decorative icons, stars, cards background shapes, or bloated wrapper classes. Keep it human, minimal, and completely functional.
