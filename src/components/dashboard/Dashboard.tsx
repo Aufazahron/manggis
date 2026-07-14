@@ -12,7 +12,7 @@ import {
   Package,
   Play,
   ShieldCheck,
-  Star,
+  Ban,
   TrendingDown,
   TrendingUp,
   Truck,
@@ -51,41 +51,55 @@ const COLOR_C = "#64748b";
 
 type GradeId = "A" | "B" | "C";
 
+const GRADE_LABELS: Record<GradeId, string> = {
+  A: "Ekspor",
+  B: "Lokal",
+  C: "Tidak Layak Jual",
+};
+
+function gradeLabel(id: GradeId): string {
+  return GRADE_LABELS[id];
+}
+
 const GRADE_LINES: {
   id: GradeId;
   dataKey: "gradeA" | "gradeB" | "gradeC";
   name: string;
   color: string;
 }[] = [
-  { id: "A", dataKey: "gradeA", name: "Grade A", color: COLOR_A },
-  { id: "B", dataKey: "gradeB", name: "Grade B", color: COLOR_B },
-  { id: "C", dataKey: "gradeC", name: "Grade C", color: COLOR_C },
+  { id: "A", dataKey: "gradeA", name: GRADE_LABELS.A, color: COLOR_A },
+  { id: "B", dataKey: "gradeB", name: GRADE_LABELS.B, color: COLOR_B },
+  { id: "C", dataKey: "gradeC", name: GRADE_LABELS.C, color: COLOR_C },
 ];
 
 const GRADE_PRICES = [
   {
     id: "A",
-    label: "Grade A",
+    label: GRADE_LABELS.A,
     badge: "bg-amber-400 text-amber-950",
     bar: "bg-[#3b0764]",
     price: 85000,
+    image: "/manggis-ekspor.png",
     icon: Crown,
   },
   {
     id: "B",
-    label: "Grade B",
+    label: GRADE_LABELS.B,
     badge: "bg-emerald-500 text-white",
     bar: "bg-emerald-700",
     price: 68000,
+    image: "/manggis-lokal.png",
     icon: Leaf,
   },
   {
     id: "C",
-    label: "Grade C",
-    badge: "bg-slate-400 text-white",
+    label: GRADE_LABELS.C,
+    badgeLabel: "Busuk",
+    badge: "bg-slate-500 text-white",
     bar: "bg-slate-600",
     price: 52000,
-    icon: Star,
+    image: "/manggis-busuk.png",
+    icon: Ban,
   },
 ];
 
@@ -105,29 +119,13 @@ const STOCK_READY_TON = 18;
 const LOCAL_PARTNER_COUNT = 14;
 const QC_PASS_RATE = 91;
 
-const exportNeeds = [
-  {
-    gradeId: "A" as const,
-    label: "Grade A",
-    value: `${Math.round((EXPORT_TOTAL_TON * GRADE_SHARE.A) / 100)} ton`,
-    percent: GRADE_SHARE.A,
-    color: COLOR_A,
-  },
-  {
-    gradeId: "B" as const,
-    label: "Grade B",
-    value: `${Math.round((EXPORT_TOTAL_TON * GRADE_SHARE.B) / 100)} ton`,
-    percent: GRADE_SHARE.B,
-    color: COLOR_B,
-  },
-  {
-    gradeId: "C" as const,
-    label: "Grade C",
-    value: `${Math.round((EXPORT_TOTAL_TON * GRADE_SHARE.C) / 100)} ton`,
-    percent: GRADE_SHARE.C,
-    color: COLOR_C,
-  },
-];
+const exportNeeds = (["A", "B", "C"] as const).map((gradeId) => ({
+  gradeId,
+  label: GRADE_LABELS[gradeId],
+  value: `${Math.round((EXPORT_TOTAL_TON * GRADE_SHARE[gradeId]) / 100)} ton`,
+  percent: GRADE_SHARE[gradeId],
+  color: gradeId === "A" ? COLOR_A : gradeId === "B" ? COLOR_B : COLOR_C,
+}));
 
 const summaryStats = [
   {
@@ -170,11 +168,12 @@ const exportDestinations = [
   { country: "Uni Emirat Arab", flag: "🇦🇪", volume: "7 ton", share: 28 },
 ];
 
-const gradeDistribution = [
-  { gradeId: "A" as const, name: "Grade A", value: GRADE_SHARE.A, color: COLOR_A },
-  { gradeId: "B" as const, name: "Grade B", value: GRADE_SHARE.B, color: COLOR_B },
-  { gradeId: "C" as const, name: "Grade C", value: GRADE_SHARE.C, color: COLOR_C },
-];
+const gradeDistribution = (["A", "B", "C"] as const).map((gradeId) => ({
+  gradeId,
+  name: GRADE_LABELS[gradeId],
+  value: GRADE_SHARE[gradeId],
+  color: gradeId === "A" ? COLOR_A : gradeId === "B" ? COLOR_B : COLOR_C,
+}));
 
 const footerItems = [
   {
@@ -196,7 +195,7 @@ const footerItems = [
 
 const insightMetrics = [
   {
-    label: "Harga Grade A",
+    label: "Harga Ekspor",
     value: "+12,3%",
     comparison: "Perbandingan minggu lalu",
     up: true,
@@ -214,7 +213,7 @@ const insightMetrics = [
     up: true,
   },
   {
-    label: "Permintaan Grade A",
+    label: "Permintaan Ekspor",
     value: "+15,0%",
     comparison: "Perbandingan minggu lalu",
     up: true,
@@ -548,11 +547,11 @@ export default function Dashboard() {
           <Card>
             <SectionHeader
               icon={Package}
-              title="Harga Manggis Per Grade"
+              title="Harga Manggis Per Kategori"
               subtitle={
                 focusedGrade
-                  ? `Fokus Grade ${focusedGrade} — ketuk lagi untuk tampilkan semua`
-                  : "Ketuk kartu grade untuk fokus ke grafik"
+                  ? `Fokus ${gradeLabel(focusedGrade)} — ketuk lagi untuk tampilkan semua`
+                  : "Ketuk kartu kategori untuk fokus ke grafik"
               }
             />
             <div className="grid grid-cols-3 gap-3">
@@ -575,7 +574,7 @@ export default function Dashboard() {
                   >
                     <div className="relative h-[175px]">
                       <Image
-                        src={PLACEHOLDER_IMAGE}
+                        src={grade.image}
                         alt={grade.label}
                         fill
                         className="object-cover"
@@ -585,7 +584,7 @@ export default function Dashboard() {
                         className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${grade.badge}`}
                       >
                         <grade.icon className="h-3.5 w-3.5" strokeWidth={2.5} />
-                        {grade.label}
+                        {grade.badgeLabel ?? grade.label}
                       </span>
                     </div>
                     <div
@@ -607,7 +606,7 @@ export default function Dashboard() {
                 title="Trend Harga"
                 subtitle={
                   focusedGrade
-                    ? `6 Bulan Terakhir — fokus Grade ${focusedGrade}`
+                    ? `6 Bulan Terakhir — fokus ${gradeLabel(focusedGrade)}`
                     : "6 Bulan Terakhir"
                 }
               />
@@ -695,8 +694,8 @@ export default function Dashboard() {
                 title="Kebutuhan Jumlah Ekspor"
                 subtitle={
                   focusedGrade
-                    ? `Kebutuhan per Grade — fokus Grade ${focusedGrade}`
-                    : "Kebutuhan per Grade"
+                    ? `Kebutuhan per kategori — fokus ${gradeLabel(focusedGrade)}`
+                    : "Kebutuhan per kategori"
                 }
               />
 
@@ -820,7 +819,7 @@ export default function Dashboard() {
             <ExportDestinationsCard />
 
             <Card className="flex flex-col">
-              <SectionHeader icon={Package} title="Distribusi Grade" />
+              <SectionHeader icon={Package} title="Distribusi Kategori" />
               <GradeDistributionChart
                 focusedGrade={focusedGrade}
                 onGradeFocus={toggleGradeFocus}
