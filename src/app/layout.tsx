@@ -25,11 +25,11 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} scrollbar-thin h-full overflow-auto antialiased`}
       suppressHydrationWarning
     >
       <body
-        className="h-dvh w-dvw overflow-hidden bg-slate-100 antialiased"
+        className="scrollbar-thin min-h-full overflow-auto bg-slate-100 antialiased"
         suppressHydrationWarning
       >
         {children}

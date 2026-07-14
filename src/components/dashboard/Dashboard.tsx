@@ -601,8 +601,8 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="flex h-dvh w-dvw items-center justify-center overflow-hidden bg-[#dfe4ea]">
-      <div className="flex aspect-[9/16] h-[min(100dvh,calc(100dvw*16/9))] w-[min(100dvw,calc(100dvh*9/16))] flex-col overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+    <div className="flex justify-center bg-[#dfe4ea]">
+      <div className="flex aspect-[9/16] h-[max(1920px,min(100dvh,calc(100dvw*16/9)))] w-[max(1080px,min(100dvw,calc(100dvh*9/16)))] min-h-[1920px] min-w-[1080px] shrink-0 flex-col overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
         {/* Header */}
         <header className="shrink-0 bg-[#0f2e22] px-5 py-2.5">
           <div className="flex items-center justify-between gap-3">
