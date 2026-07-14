@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Calendar,
   ChevronRight,
@@ -12,7 +12,7 @@ import {
   Package,
   Play,
   ShieldCheck,
-  Ban,
+  Star,
   TrendingDown,
   TrendingUp,
   Truck,
@@ -76,40 +76,45 @@ const GRADE_PRICES = [
   {
     id: "A",
     label: GRADE_LABELS.A,
+    badgeLabel: "Grade A",
     badge: "bg-amber-400 text-amber-950",
     bar: "bg-[#3b0764]",
-    price: 85000,
-    image: "/manggis-ekspor.png",
+    price: 78000,
+    image: "/grade-ekspor.png",
+    imagePosition: "center 40%",
     icon: Crown,
   },
   {
     id: "B",
     label: GRADE_LABELS.B,
+    badgeLabel: "Grade B",
     badge: "bg-emerald-500 text-white",
     bar: "bg-emerald-700",
-    price: 68000,
-    image: "/manggis-lokal.png",
+    price: 25000,
+    image: "/grade-lokal.png",
+    imagePosition: "center center",
     icon: Leaf,
   },
   {
     id: "C",
     label: GRADE_LABELS.C,
-    badgeLabel: "Busuk",
-    badge: "bg-slate-500 text-white",
+    badgeLabel: "Grade C",
+    badge: "bg-slate-400 text-white",
     bar: "bg-slate-600",
-    price: 52000,
-    image: "/manggis-busuk.png",
-    icon: Ban,
+    price: 8000,
+    image: "/grade-busuk.png",
+    imagePosition: "center center",
+    icon: Star,
   },
 ];
 
 const trendData = [
-  { month: "Feb", gradeA: 72000, gradeB: 56000, gradeC: 44000 },
-  { month: "Mar", gradeA: 76000, gradeB: 60000, gradeC: 47000 },
-  { month: "Apr", gradeA: 80000, gradeB: 64000, gradeC: 49000 },
-  { month: "Mei", gradeA: 82000, gradeB: 66000, gradeC: 50500 },
-  { month: "Jun", gradeA: 83500, gradeB: 67000, gradeC: 51500 },
-  { month: "Jul", gradeA: 85000, gradeB: 68000, gradeC: 52000 },
+  { month: "Feb", gradeA: 55000, gradeB: 12000, gradeC: 4000 },
+  { month: "Mar", gradeA: 65000, gradeB: 15000, gradeC: 5000 },
+  { month: "Apr", gradeA: 80000, gradeB: 18000, gradeC: 6000 },
+  { month: "Mei", gradeA: 78000, gradeB: 20000, gradeC: 6500 },
+  { month: "Jun", gradeA: 76000, gradeB: 22000, gradeC: 7500 },
+  { month: "Jul", gradeA: 78000, gradeB: 25000, gradeC: 8000 },
 ];
 
 const GRADE_SHARE = { A: 48, B: 32, C: 20 } as const;
@@ -266,7 +271,7 @@ function GradeDistributionChart({
 
   return (
     <div className="flex flex-1 items-center gap-3">
-      <div className="relative h-[140px] w-[140px] shrink-0">
+      <div className="relative h-[120px] w-[120px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -427,7 +432,7 @@ function SectionHeader({
   subtitle?: string;
 }) {
   return (
-    <div className="mb-3">
+    <div className="mb-2">
       <div className="flex items-center gap-2">
         <Icon className="h-4 w-4 text-emerald-700" strokeWidth={2} />
         <h2 className="text-xs font-bold tracking-wide text-slate-800 uppercase">
@@ -441,6 +446,126 @@ function SectionHeader({
   );
 }
 
+const PROCESS_VIDEOS = [
+  {
+    src: "/videos/proses-tanam.mp4",
+    step: "Tanam",
+    caption: "Bibit & perawatan kebun manggis",
+  },
+  {
+    src: "/videos/proses-panen.mp4",
+    step: "Panen",
+    caption: "Pemetikan buah matang di kebun",
+  },
+  {
+    src: "/videos/proses-sortasi.mp4",
+    step: "Sortasi",
+    caption: "Sortasi & grading di pabrik",
+  },
+] as const;
+
+function ProcessVideoPlayer({ className = "" }: { className?: string }) {
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const userPausedRef = useRef(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const clip = PROCESS_VIDEOS[index];
+
+  const startPlayback = () => {
+    const video = videoRef.current;
+    if (!video || userPausedRef.current) return;
+
+    void video.play().catch(() => setPlaying(false));
+  };
+
+  useEffect(() => {
+    userPausedRef.current = false;
+    startPlayback();
+  }, [index]);
+
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.paused) {
+      userPausedRef.current = false;
+      void video.play().catch(() => setPlaying(false));
+    } else {
+      userPausedRef.current = true;
+      video.pause();
+    }
+  };
+
+  return (
+    <div
+      className={`group relative min-h-0 w-full overflow-hidden rounded-lg bg-black ${className}`}
+    >
+      <video
+        ref={videoRef}
+        key={clip.src}
+        className="h-full w-full object-cover"
+        src={clip.src}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onCanPlay={startPlayback}
+        onEnded={() => setIndex((current) => (current + 1) % PROCESS_VIDEOS.length)}
+      />
+
+      <div className="pointer-events-none absolute inset-0 bg-black/15" />
+
+      <div className="absolute top-3 right-3 flex gap-1.5">
+        {PROCESS_VIDEOS.map((item, videoIndex) => (
+          <span
+            key={item.step}
+            className={`h-1.5 rounded-full transition-all ${
+              videoIndex === index ? "w-6 bg-white" : "w-1.5 bg-white/40"
+            }`}
+          />
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={togglePlayback}
+        className="absolute inset-0 z-10 flex items-center justify-center"
+        aria-label={playing ? "Jeda video" : "Putar video"}
+      >
+        <span
+          className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-md transition-opacity ${
+            playing ? "opacity-0 group-hover:opacity-100" : "opacity-100"
+          }`}
+        >
+          {playing ? (
+            <span className="flex gap-1">
+              <span className="h-4 w-1 rounded-full bg-slate-800" />
+              <span className="h-4 w-1 rounded-full bg-slate-800" />
+            </span>
+          ) : (
+            <Play className="ml-0.5 h-5 w-5 fill-slate-800 text-slate-800" strokeWidth={0} />
+          )}
+        </span>
+      </button>
+
+      <div className="pointer-events-none absolute right-0 bottom-0 left-0 z-20 flex items-center justify-between gap-3 bg-black/55 px-4 py-2.5">
+        <span className="flex min-w-0 items-center gap-2">
+          <Video className="h-4 w-4 shrink-0 text-emerald-300" />
+          <span className="truncate text-sm font-medium text-white">
+            {clip.step}: {clip.caption}
+          </span>
+        </span>
+        <span className="shrink-0 rounded bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white/90">
+          {index + 1}/{PROCESS_VIDEOS.length}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 function Card({
   children,
   className = "",
@@ -450,7 +575,7 @@ function Card({
 }) {
   return (
     <div
-      className={`rounded-xl border border-slate-200/80 bg-white p-4 shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${className}`}
+      className={`rounded-xl border border-slate-200/80 bg-white p-3 shadow-[0_1px_3px_rgba(0,0,0,0.04)] ${className}`}
     >
       {children}
     </div>
@@ -476,10 +601,10 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="scrollbar-thin min-h-screen w-full overflow-y-auto bg-[#dfe4ea] py-4">
-      <div className="mx-auto grid h-[1920px] w-[1080px] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+    <div className="flex h-dvh w-dvw items-center justify-center overflow-hidden bg-[#dfe4ea]">
+      <div className="flex aspect-[9/16] h-[min(100dvh,calc(100dvw*16/9))] w-[min(100dvw,calc(100dvh*9/16))] flex-col overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
         {/* Header */}
-        <header className="shrink-0 bg-[#0f2e22] px-5 py-3">
+        <header className="shrink-0 bg-[#0f2e22] px-5 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-white/10">
@@ -503,58 +628,25 @@ export default function Dashboard() {
             <div className="flex shrink-0 flex-col items-end gap-1.5">
               <div className="flex items-center gap-2 text-xs text-white/90">
                 <Calendar className="h-3.5 w-3.5 text-emerald-300" />
-                <span>{now ? formatDateId(now) : "—"}</span>
+                <span>{now ? formatDateId(now) : "-"}</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-white/90">
                 <Clock className="h-3.5 w-3.5 text-emerald-300" />
-                <span>{now ? formatClock(now) : "—"}</span>
+                <span>{now ? formatClock(now) : "-"}</span>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="scrollbar-thin grid min-h-0 flex-1 grid-rows-[auto_auto_minmax(0,1fr)_auto_auto] gap-3 overflow-y-auto px-4 py-4">
+        <main className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto_auto_auto] gap-2 overflow-hidden px-4 py-3">
           {/* Video Proses */}
-          <Card>
-            <SectionHeader icon={Video} title="Video Proses" />
-            <div className="group relative h-[310px] overflow-hidden rounded-lg bg-slate-900">
-              <Image
-                src={PLACEHOLDER_IMAGE}
-                alt="Video proses tanam, panen, dan sortasi manggis"
-                fill
-                className="object-cover"
-                sizes="1080px"
-              />
-              <div className="absolute inset-0 bg-black/20" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-md">
-                  <Play
-                    className="ml-0.5 h-5 w-5 fill-slate-800 text-slate-800"
-                    strokeWidth={0}
-                  />
-                </span>
-              </div>
-              <div className="absolute right-0 bottom-0 left-0 flex items-center gap-2 bg-black/55 px-4 py-2.5">
-                <Video className="h-4 w-4 text-emerald-300" />
-                <span className="text-sm font-medium text-white">
-                  Tanam, Panen & Sortasi Manggis
-                </span>
-              </div>
-            </div>
+          <Card className="flex min-h-0 flex-col overflow-hidden">
+            <ProcessVideoPlayer className="min-h-0 flex-1" />
           </Card>
 
           {/* Harga per Grade */}
-          <Card>
-            <SectionHeader
-              icon={Package}
-              title="Harga Manggis Per Kategori"
-              subtitle={
-                focusedGrade
-                  ? `Fokus ${gradeLabel(focusedGrade)} — ketuk lagi untuk tampilkan semua`
-                  : "Ketuk kartu kategori untuk fokus ke grafik"
-              }
-            />
-            <div className="grid grid-cols-3 gap-3">
+          <Card className="flex min-h-0 flex-col overflow-hidden">
+            <div className="grid min-h-0 flex-1 grid-cols-3 gap-3">
               {GRADE_PRICES.map((grade) => {
                 const isFocused = focusedGrade === grade.id;
                 const isDimmed = focusedGrade !== null && !isFocused;
@@ -564,7 +656,7 @@ export default function Dashboard() {
                     key={grade.id}
                     type="button"
                     onClick={() => toggleGradeFocus(grade.id as GradeId)}
-                    className={`overflow-hidden rounded-lg border bg-white text-left transition-all ${
+                    className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white text-left transition-all ${
                       isFocused
                         ? "scale-[1.02] border-emerald-400 ring-2 ring-emerald-500/60"
                         : isDimmed
@@ -572,23 +664,26 @@ export default function Dashboard() {
                           : "border-slate-200 hover:border-emerald-200"
                     }`}
                   >
-                    <div className="relative h-[175px]">
+                    <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
                       <Image
                         src={grade.image}
                         alt={grade.label}
                         fill
                         className="object-cover"
+                        style={{ objectPosition: grade.imagePosition }}
                         sizes="400px"
+                        unoptimized
+                        priority={grade.id === "A"}
                       />
                       <span
-                        className={`absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-bold ${grade.badge}`}
+                        className={`absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold shadow-md ${grade.badge}`}
                       >
-                        <grade.icon className="h-3.5 w-3.5" strokeWidth={2.5} />
-                        {grade.badgeLabel ?? grade.label}
+                        <grade.icon className="h-4 w-4" strokeWidth={2.5} />
+                        {grade.badgeLabel}
                       </span>
                     </div>
                     <div
-                      className={`${grade.bar} px-3 py-2.5 text-center text-base font-bold text-white`}
+                      className={`${grade.bar} shrink-0 px-3 py-3.5 text-center text-2xl font-bold text-white`}
                     >
                       {formatPrice(grade.price)}/kg
                     </div>
@@ -599,14 +694,14 @@ export default function Dashboard() {
           </Card>
 
           {/* Trend + Kebutuhan Ekspor */}
-          <div className="grid min-h-0 grid-cols-2 items-stretch gap-3">
-            <Card className="flex min-h-0 flex-col">
+          <div className="grid grid-cols-2 items-stretch gap-2">
+            <Card className="flex flex-col">
               <SectionHeader
                 icon={Globe}
                 title="Trend Harga"
                 subtitle={
                   focusedGrade
-                    ? `6 Bulan Terakhir — fokus ${gradeLabel(focusedGrade)}`
+                    ? `6 Bulan Terakhir, fokus ${gradeLabel(focusedGrade)}`
                     : "6 Bulan Terakhir"
                 }
               />
@@ -637,9 +732,10 @@ export default function Dashboard() {
                   );
                 })}
               </div>
-              <div className="min-h-[240px] flex-1 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={trendData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
+              <div className="relative min-h-[320px] flex-1">
+                <div className="absolute inset-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trendData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                     <XAxis
                       dataKey="month"
@@ -685,21 +781,22 @@ export default function Dashboard() {
                     ))}
                   </LineChart>
                 </ResponsiveContainer>
+                </div>
               </div>
             </Card>
 
-            <Card className="flex h-full flex-col">
+            <Card className="flex flex-col">
               <SectionHeader
                 icon={Globe}
                 title="Kebutuhan Jumlah Ekspor"
                 subtitle={
                   focusedGrade
-                    ? `Kebutuhan per kategori — fokus ${gradeLabel(focusedGrade)}`
+                    ? `Kebutuhan per kategori, fokus ${gradeLabel(focusedGrade)}`
                     : "Kebutuhan per kategori"
                 }
               />
 
-              <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-3">
+              <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-2.5">
                 <p className="mb-2 text-xs font-medium text-slate-600">
                   Komposisi total {EXPORT_TOTAL_TON} ton
                 </p>
@@ -739,7 +836,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div className="mt-3 space-y-2">
+              <div className="mt-2 space-y-1.5">
                 {exportNeeds.map((item) => {
                   const isFocused = focusedGrade === item.gradeId;
                   const isDimmed = focusedGrade !== null && !isFocused;
@@ -749,7 +846,7 @@ export default function Dashboard() {
                       key={item.label}
                       type="button"
                       onClick={() => toggleGradeFocus(item.gradeId)}
-                      className={`block w-full rounded-lg border px-3 py-2.5 text-left transition-all ${
+                      className={`block w-full rounded-lg border px-3 py-2 text-left transition-all ${
                         isFocused
                           ? "border-emerald-300 bg-emerald-50/50 ring-1 ring-emerald-200"
                           : isDimmed
@@ -779,7 +876,7 @@ export default function Dashboard() {
                 })}
               </div>
 
-              <div className="mt-auto rounded-lg bg-emerald-50 px-4 py-3 pt-4 text-center">
+              <div className="mt-auto rounded-lg bg-emerald-50 px-3 py-2 text-center">
                 <p className="text-sm font-semibold text-emerald-800">
                   Total Kebutuhan Ekspor:{" "}
                   <span className="text-base">{EXPORT_TOTAL_TON} ton</span>
@@ -795,11 +892,11 @@ export default function Dashboard() {
               title="Ringkasan Hari Ini"
               subtitle="Sortasi harian dan stok akumulasi gudang"
             />
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-4 gap-2">
               {summaryStats.map((stat) => (
                 <div
                   key={stat.label}
-                  className="rounded-lg border border-slate-100 bg-slate-50/80 p-4"
+                  className="rounded-lg border border-slate-100 bg-slate-50/80 p-3"
                 >
                   <div
                     className={`mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${stat.bg}`}
@@ -807,7 +904,7 @@ export default function Dashboard() {
                     <stat.icon className={`h-4 w-4 ${stat.color}`} strokeWidth={2} />
                   </div>
                   <p className="text-xs text-slate-500">{stat.label}</p>
-                  <p className={`mt-1 text-2xl font-bold ${stat.color}`}>{stat.value}</p>
+                  <p className={`mt-1 text-xl font-bold ${stat.color}`}>{stat.value}</p>
                   <p className="mt-1 text-[10px] leading-snug text-slate-400">{stat.hint}</p>
                 </div>
               ))}
@@ -815,7 +912,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Bottom row */}
-          <div className="grid min-h-[220px] grid-cols-3 gap-3">
+          <div className="grid min-h-0 grid-cols-3 gap-2 overflow-hidden">
             <ExportDestinationsCard />
 
             <Card className="flex flex-col">
@@ -840,7 +937,7 @@ export default function Dashboard() {
                   return (
                     <div
                       key={metric.label}
-                      className="flex items-center justify-between py-3 first:pt-0"
+                      className="flex items-center justify-between py-2 first:pt-0"
                     >
                       <div>
                         <p className="text-xs font-medium text-slate-700">{metric.label}</p>
@@ -858,10 +955,10 @@ export default function Dashboard() {
               </div>
             </Card>
           </div>
-        </div>
+        </main>
 
         {/* Footer */}
-        <footer className="shrink-0 bg-[#0f2e22] px-5 py-3">
+        <footer className="shrink-0 bg-[#0f2e22] px-5 py-2.5">
           <div className="flex items-center justify-between gap-4">
             <div className="grid flex-1 grid-cols-3 gap-2">
               {footerItems.map((item) => (

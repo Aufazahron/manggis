@@ -29,7 +29,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="h-screen w-screen overflow-auto bg-slate-100 antialiased"
+        className="h-dvh w-dvw overflow-hidden bg-slate-100 antialiased"
         suppressHydrationWarning
       >
         {children}
