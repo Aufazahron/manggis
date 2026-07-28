@@ -9,6 +9,7 @@ import {
   Crown,
   Globe,
   Leaf,
+  Mail,
   Package,
   Play,
   ShieldCheck,
@@ -16,7 +17,6 @@ import {
   TrendingDown,
   TrendingUp,
   Truck,
-  Users,
   Video,
   Weight,
 } from "lucide-react";
@@ -52,9 +52,9 @@ const COLOR_C = "#64748b";
 type GradeId = "A" | "B" | "C";
 
 const GRADE_LABELS: Record<GradeId, string> = {
-  A: "Ekspor",
-  B: "Lokal",
-  C: "Tidak Layak Jual",
+  A: "Grade A",
+  B: "Grade B",
+  C: "Grade C",
 };
 
 function gradeLabel(id: GradeId): string {
@@ -79,8 +79,8 @@ const GRADE_PRICES = [
     badgeLabel: "Grade A",
     badge: "bg-amber-400 text-amber-950",
     bar: "bg-[#3b0764]",
-    price: 78000,
-    image: "/grade-ekspor.png",
+    price: 52000,
+    image: "/grade-a.png",
     imagePosition: "center 40%",
     icon: Crown,
   },
@@ -90,8 +90,8 @@ const GRADE_PRICES = [
     badgeLabel: "Grade B",
     badge: "bg-emerald-500 text-white",
     bar: "bg-emerald-700",
-    price: 25000,
-    image: "/grade-lokal.png",
+    price: 35000,
+    image: "/grade-b.png",
     imagePosition: "center center",
     icon: Leaf,
   },
@@ -101,76 +101,88 @@ const GRADE_PRICES = [
     badgeLabel: "Grade C",
     badge: "bg-slate-400 text-white",
     bar: "bg-slate-600",
-    price: 8000,
-    image: "/grade-busuk.png",
+    price: 12000,
+    image: "/grade-c.png",
     imagePosition: "center center",
     icon: Star,
   },
 ];
 
+// Harga manggis per kg — rata-rata nasional Indonesia 2026 (bukan satu wilayah).
+// Angka merupakan estimasi rerata lintas daerah, sehingga fluktuasi lebih landai
+// dibanding lonjakan lokal (mis. rekor Rp80rb di Banyuwangi/Bali saat pasokan langka).
+// Acuan: kisaran retail Jul ~Rp13-55rb, tingkat petani ~Rp50rb, sortasi Sp/MIX/Bs.
 const trendData = [
-  { month: "Feb", gradeA: 55000, gradeB: 12000, gradeC: 4000 },
-  { month: "Mar", gradeA: 65000, gradeB: 15000, gradeC: 5000 },
-  { month: "Apr", gradeA: 80000, gradeB: 18000, gradeC: 6000 },
-  { month: "Mei", gradeA: 78000, gradeB: 20000, gradeC: 6500 },
-  { month: "Jun", gradeA: 76000, gradeB: 22000, gradeC: 7500 },
-  { month: "Jul", gradeA: 78000, gradeB: 25000, gradeC: 8000 },
+  { month: "Feb", gradeA: 48000, gradeB: 32000, gradeC: 10000 },
+  { month: "Mar", gradeA: 55000, gradeB: 36000, gradeC: 12000 },
+  { month: "Apr", gradeA: 58000, gradeB: 40000, gradeC: 14000 },
+  { month: "Mei", gradeA: 56000, gradeB: 38000, gradeC: 13000 },
+  { month: "Jun", gradeA: 53000, gradeB: 36000, gradeC: 12000 },
+  { month: "Jul", gradeA: 52000, gradeB: 35000, gradeC: 12000 },
 ];
 
 const GRADE_SHARE = { A: 48, B: 32, C: 20 } as const;
-const EXPORT_TOTAL_TON = 25;
-const DAILY_SORTASI_TON = 3.2;
-const STOCK_READY_TON = 18;
-const LOCAL_PARTNER_COUNT = 14;
-const QC_PASS_RATE = 91;
+// Komposisi kebutuhan ekspor condong ke premium: protokol ekspor menuntut mutu
+// tinggi & hanya sebagian kecil produksi lolos standar ekspor (mis. Purwakarta
+// ~30% produksi menembus ekspor). Rincian A/B/C tidak dirilis resmi -> estimasi.
+const EXPORT_SHARE = { A: 65, B: 30, C: 5 } as const;
+// Total volume ekspor manggis Indonesia 2024 (BPS): ~95.679 ton, dibulatkan.
+const EXPORT_TOTAL_TON = 96000;
+// Data umum nasional (Angka Tetap Hortikultura 2024, Kementan/BPS).
+const NATIONAL_PRODUCTION_TON = 416753; // Produksi manggis Indonesia 2024
+const TOP_PROVINCE = "Jawa Barat"; // Provinsi produsen terbesar 2024
+const TOP_PROVINCE_TON = 100117; // Produksi Jawa Barat 2024
+const AVG_PRICE_A = 52000; // Rata-rata harga Grade A/super 2026 (per kg)
 
 const exportNeeds = (["A", "B", "C"] as const).map((gradeId) => ({
   gradeId,
   label: GRADE_LABELS[gradeId],
-  value: `${Math.round((EXPORT_TOTAL_TON * GRADE_SHARE[gradeId]) / 100)} ton`,
-  percent: GRADE_SHARE[gradeId],
+  value: `${(Math.round((EXPORT_TOTAL_TON * EXPORT_SHARE[gradeId]) / 100 / 1000) * 1000).toLocaleString("id-ID")} ton`,
+  percent: EXPORT_SHARE[gradeId],
   color: gradeId === "A" ? COLOR_A : gradeId === "B" ? COLOR_B : COLOR_C,
 }));
 
 const summaryStats = [
   {
-    label: "Sortasi Hari Ini",
-    value: `${DAILY_SORTASI_TON.toLocaleString("id-ID")} ton`,
-    hint: "Hasil sortasi hari ini",
+    label: "Produksi Nasional",
+    value: `${Math.round(NATIONAL_PRODUCTION_TON / 1000)} rb ton`,
+    hint: "Produksi manggis 2024 (BPS)",
     icon: Weight,
     color: "text-violet-600",
     bg: "bg-violet-50",
   },
   {
-    label: "Lolos QC",
-    value: `${QC_PASS_RATE}%`,
-    hint: "Dari sortasi hari ini",
-    icon: ShieldCheck,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
-  },
-  {
-    label: "Stok Siap Kirim",
-    value: `${STOCK_READY_TON} ton`,
-    hint: `${Math.round((STOCK_READY_TON / EXPORT_TOTAL_TON) * 100)}% dari kebutuhan ${EXPORT_TOTAL_TON} ton`,
+    label: "Volume Ekspor",
+    value: `${Math.round(EXPORT_TOTAL_TON / 1000)} rb ton`,
+    hint: `±${Math.round((EXPORT_TOTAL_TON / NATIONAL_PRODUCTION_TON) * 100)}% dari produksi nasional`,
     icon: Truck,
     color: "text-sky-600",
     bg: "bg-sky-50",
   },
   {
-    label: "Mitra Petani",
-    value: `${LOCAL_PARTNER_COUNT}`,
-    hint: "Kebun & koperasi lokal",
-    icon: Users,
+    label: "Provinsi Teratas",
+    value: TOP_PROVINCE,
+    hint: `${Math.round(TOP_PROVINCE_TON / 1000)} rb ton • ${Math.round((TOP_PROVINCE_TON / NATIONAL_PRODUCTION_TON) * 100)}% nasional`,
+    icon: Leaf,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+  },
+  {
+    label: "Harga Rata-rata",
+    value: `Rp${Math.round(AVG_PRICE_A / 1000)} rb/kg`,
+    hint: "Grade A/super 2026",
+    icon: TrendingUp,
     color: "text-amber-600",
     bg: "bg-amber-50",
   },
 ];
 
+// Tujuan ekspor manggis Indonesia — data BPS 2024 (via jurnal utami.id/JM v2i2.399).
+// Volume tahunan nasional; Tiongkok + Hongkong = pasar dominan (~75% total ekspor).
 const exportDestinations = [
-  { country: "Tiongkok", flag: "🇨🇳", volume: "10 ton", share: 40 },
-  { country: "Singapura", flag: "🇸🇬", volume: "8 ton", share: 32 },
-  { country: "Uni Emirat Arab", flag: "🇦🇪", volume: "7 ton", share: 28 },
+  { country: "Hongkong", flag: "🇭🇰", volume: "55.000 ton", share: 50 },
+  { country: "Tiongkok", flag: "🇨🇳", volume: "45.000 ton", share: 40 },
+  { country: "Malaysia", flag: "🇲🇾", volume: "11.000 ton", share: 10 },
 ];
 
 const gradeDistribution = (["A", "B", "C"] as const).map((gradeId) => ({
@@ -180,16 +192,19 @@ const gradeDistribution = (["A", "B", "C"] as const).map((gradeId) => ({
   color: gradeId === "A" ? COLOR_A : gradeId === "B" ? COLOR_B : COLOR_C,
 }));
 
+// Logo mitra/institusi di footer. Set `src: null` untuk slot yang menyusul.
+const partnerLogos: { src: string | null; alt: string }[] = [
+  { src: "/logo-1.png", alt: "Logo Mitra 1" },
+  { src: null, alt: "Logo Mitra 2" },
+];
+
+const CONTACT_EMAIL = "kontak@manggisindonesia.id";
+
 const footerItems = [
   {
     title: "Kualitas Terjaga",
     subtitle: "Sortasi & QC Ketat",
     icon: ShieldCheck,
-  },
-  {
-    title: "Rantai Pasok Efisien",
-    subtitle: "Dari Kebun ke Dunia",
-    icon: Truck,
   },
   {
     title: "Pasar Global Terpercaya",
@@ -356,7 +371,11 @@ function ExportDestinationsCard() {
 
   return (
     <Card className="flex h-full flex-col">
-      <SectionHeader icon={Globe} title="Tujuan Ekspor Utama" subtitle="3 negara tujuan" />
+      <SectionHeader
+        icon={Globe}
+        title="Tujuan Ekspor Utama"
+        subtitle="Volume tahunan nasional (BPS 2024)"
+      />
       <ul className="space-y-2">
         {exportDestinations.map((dest, index) => (
           <li key={dest.country}>
@@ -389,7 +408,7 @@ function ExportDestinationsCard() {
                   <span>
                     Volume: <strong className="text-slate-800">{dest.volume}</strong>
                   </span>
-                  <span>{dest.share}% dari total ekspor</span>
+                  <span>{dest.share}% dari 3 tujuan teratas</span>
                 </span>
               ) : null}
             </button>
@@ -791,14 +810,14 @@ export default function Dashboard() {
                 title="Kebutuhan Jumlah Ekspor"
                 subtitle={
                   focusedGrade
-                    ? `Kebutuhan per kategori, fokus ${gradeLabel(focusedGrade)}`
-                    : "Kebutuhan per kategori"
+                    ? `Estimasi per grade (BPS 2024), fokus ${gradeLabel(focusedGrade)}`
+                    : "Estimasi komposisi per grade (BPS 2024)"
                 }
               />
 
               <div className="rounded-lg border border-slate-100 bg-slate-50/80 p-2.5">
                 <p className="mb-2 text-xs font-medium text-slate-600">
-                  Komposisi total {EXPORT_TOTAL_TON} ton
+                  Komposisi total {EXPORT_TOTAL_TON.toLocaleString("id-ID")} ton
                 </p>
                 <div className="flex h-7 w-full overflow-hidden rounded-full">
                   {exportNeeds.map((item) => (
@@ -878,8 +897,10 @@ export default function Dashboard() {
 
               <div className="mt-auto rounded-lg bg-emerald-50 px-3 py-2 text-center">
                 <p className="text-sm font-semibold text-emerald-800">
-                  Total Kebutuhan Ekspor:{" "}
-                  <span className="text-base">{EXPORT_TOTAL_TON} ton</span>
+                  Total Ekspor Nasional 2024:{" "}
+                  <span className="text-base">
+                    {EXPORT_TOTAL_TON.toLocaleString("id-ID")} ton
+                  </span>
                 </p>
               </div>
             </Card>
@@ -889,8 +910,8 @@ export default function Dashboard() {
           <Card>
             <SectionHeader
               icon={Package}
-              title="Ringkasan Hari Ini"
-              subtitle="Sortasi harian dan stok akumulasi gudang"
+              title="Ringkasan Nasional"
+              subtitle="Komoditas manggis Indonesia (BPS/Kementan 2024)"
             />
             <div className="grid grid-cols-4 gap-2">
               {summaryStats.map((stat) => (
@@ -958,27 +979,63 @@ export default function Dashboard() {
         </main>
 
         {/* Footer */}
-        <footer className="shrink-0 bg-[#0f2e22] px-5 py-2.5">
+        <footer className="shrink-0 bg-[#0f2e22] px-6 py-3">
           <div className="flex items-center justify-between gap-4">
-            <div className="grid flex-1 grid-cols-3 gap-2">
-              {footerItems.map((item) => (
-                <div key={item.title} className="flex items-start gap-2">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-900/60">
-                    <item.icon className="h-3.5 w-3.5 text-emerald-300" strokeWidth={2} />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-white">{item.title}</p>
-                    <p className="truncate text-[10px] text-emerald-200/75">{item.subtitle}</p>
-                  </div>
+            {/* Brand */}
+            <div className="flex shrink-0 items-center gap-2.5">
+              <span className="h-8 w-1 shrink-0 rounded-full bg-emerald-400/80" />
+              <div>
+                <p className="text-sm font-bold text-white">Manggis Indonesia</p>
+                <p className="text-[11px] text-emerald-200/80">Berkualitas, Mendunia.</p>
+              </div>
+            </div>
+
+            {/* Fitur */}
+            {footerItems.map((item) => (
+              <div key={item.title} className="flex shrink-0 items-center gap-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-900/60">
+                  <item.icon className="h-3.5 w-3.5 text-emerald-300" strokeWidth={2} />
                 </div>
-              ))}
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-white">{item.title}</p>
+                  <p className="truncate text-[10px] text-emerald-200/75">{item.subtitle}</p>
+                </div>
+              </div>
+            ))}
+
+            {/* Logo mitra */}
+            <div className="flex shrink-0 items-center gap-3 rounded-xl bg-white/5 px-3 py-1.5 ring-1 ring-white/10">
+              {partnerLogos.map((logo) =>
+                logo.src ? (
+                  <div key={logo.alt} className="relative h-10 w-10 shrink-0">
+                    <Image
+                      src={logo.src}
+                      alt={logo.alt}
+                      fill
+                      className="object-contain"
+                      sizes="40px"
+                      unoptimized
+                    />
+                  </div>
+                ) : (
+                  <div
+                    key={logo.alt}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-white/20 text-[8px] leading-none text-emerald-200/45"
+                  >
+                    Segera
+                  </div>
+                ),
+              )}
             </div>
-            <div className="shrink-0 rounded-lg bg-emerald-700 px-3 py-2 text-right">
-              <p className="text-xs font-bold text-white">Manggis Indonesia</p>
-              <p className="text-[10px] text-emerald-100/90">
-                Berkualitas, Mendunia.
-              </p>
-            </div>
+
+            {/* Email */}
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-700/90 px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
+            >
+              <Mail className="h-4 w-4 text-emerald-200" strokeWidth={2} />
+              <span>{CONTACT_EMAIL}</span>
+            </a>
           </div>
         </footer>
       </div>
