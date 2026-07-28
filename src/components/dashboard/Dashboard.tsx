@@ -80,7 +80,7 @@ const GRADE_PRICES = [
     badge: "bg-amber-400 text-amber-950",
     bar: "bg-[#3b0764]",
     price: 52000,
-    image: "/grade-a.png",
+    image: "/grade-a.webp",
     imagePosition: "center 40%",
     icon: Crown,
   },
@@ -91,7 +91,7 @@ const GRADE_PRICES = [
     badge: "bg-emerald-500 text-white",
     bar: "bg-emerald-700",
     price: 35000,
-    image: "/grade-b.png",
+    image: "/grade-b.webp",
     imagePosition: "center center",
     icon: Leaf,
   },
@@ -102,7 +102,7 @@ const GRADE_PRICES = [
     badge: "bg-slate-400 text-white",
     bar: "bg-slate-600",
     price: 12000,
-    image: "/grade-c.png",
+    image: "/grade-c.webp",
     imagePosition: "center center",
     icon: Star,
   },
@@ -180,9 +180,9 @@ const summaryStats = [
 // Tujuan ekspor manggis Indonesia — data BPS 2024 (via jurnal utami.id/JM v2i2.399).
 // Volume tahunan nasional; Tiongkok + Hongkong = pasar dominan (~75% total ekspor).
 const exportDestinations = [
-  { country: "Hongkong", flag: "🇭🇰", volume: "55.000 ton", share: 50 },
-  { country: "Tiongkok", flag: "🇨🇳", volume: "45.000 ton", share: 40 },
-  { country: "Malaysia", flag: "🇲🇾", volume: "11.000 ton", share: 10 },
+  { country: "Hongkong", flagSrc: "/flags/hk.png", volume: "55.000 ton", share: 50 },
+  { country: "Tiongkok", flagSrc: "/flags/cn.png", volume: "45.000 ton", share: 40 },
+  { country: "Malaysia", flagSrc: "/flags/my.png", volume: "11.000 ton", share: 10 },
 ];
 
 const gradeDistribution = (["A", "B", "C"] as const).map((gradeId) => ({
@@ -194,11 +194,11 @@ const gradeDistribution = (["A", "B", "C"] as const).map((gradeId) => ({
 
 // Logo mitra/institusi di footer. Set `src: null` untuk slot yang menyusul.
 const partnerLogos: { src: string | null; alt: string }[] = [
-  { src: "/logo-1.png", alt: "Logo Mitra 1" },
-  { src: null, alt: "Logo Mitra 2" },
+  { src: "/upi.png", alt: "Universitas Pendidikan Indonesia" },
+  { src: "/d-tech.png", alt: "DTECH Edge Innovation" },
 ];
 
-const CONTACT_EMAIL = "kontak@manggisindonesia.id";
+const CONTACT_EMAIL = "dtech.inno@gmail.com";
 
 const footerItems = [
   {
@@ -213,30 +213,36 @@ const footerItems = [
   },
 ];
 
+// Insight murni data 2026, diturunkan dari tren harga (Feb->Jul 2026) yang tampil
+// di dashboard + data ekspor awal 2026:
+// - Harga Grade A: 48.000 -> 52.000 (grafik tren) -> +8,3%
+// - Harga Grade B: 32.000 -> 35.000 (grafik tren) -> +9,4%
+// - Harga Grade C: 10.000 -> 12.000 (grafik tren) -> +20,0%
+// - Volume ekspor awal 2026 vs 2025: 79,5 vs 356,5 ton (Barantin) -> -77,7%
 const insightMetrics = [
   {
-    label: "Harga Ekspor",
-    value: "+12,3%",
-    comparison: "Perbandingan minggu lalu",
+    label: "Harga Grade A",
+    value: "+8,3%",
+    comparison: "Juli vs Februari 2026",
+    up: true,
+  },
+  {
+    label: "Harga Grade B",
+    value: "+9,4%",
+    comparison: "Juli vs Februari 2026",
+    up: true,
+  },
+  {
+    label: "Harga Grade C",
+    value: "+20,0%",
+    comparison: "Juli vs Februari 2026",
     up: true,
   },
   {
     label: "Volume Ekspor",
-    value: "+8,5%",
-    comparison: "Perbandingan bulan lalu",
-    up: true,
-  },
-  {
-    label: "Lolos QC",
-    value: "+2,1%",
-    comparison: "Perbandingan hari sebelumnya",
-    up: true,
-  },
-  {
-    label: "Permintaan Ekspor",
-    value: "+15,0%",
-    comparison: "Perbandingan minggu lalu",
-    up: true,
+    value: "-77,7%",
+    comparison: "Awal 2026 dibanding 2025",
+    up: false,
   },
 ];
 
@@ -394,7 +400,16 @@ function ExportDestinationsCard() {
             >
               <span className="flex items-center justify-between">
                 <span className="flex items-center gap-2.5 text-sm font-medium text-slate-700">
-                  <span className="text-lg">{dest.flag}</span>
+                  <span className="relative h-4 w-6 shrink-0 overflow-hidden rounded-[3px] ring-1 ring-slate-200">
+                    <Image
+                      src={dest.flagSrc}
+                      alt={dest.country}
+                      fill
+                      className="object-cover"
+                      sizes="24px"
+                      unoptimized
+                    />
+                  </span>
                   {dest.country}
                 </span>
                 <ChevronRight
@@ -948,7 +963,7 @@ export default function Dashboard() {
               <SectionHeader
                 icon={TrendingUp}
                 title="Insight Performa"
-                subtitle="Perbandingan terhadap periode sebelumnya"
+                subtitle="Pergerakan sepanjang 2026"
               />
               <div className="flex flex-1 flex-col justify-center divide-y divide-slate-100">
                 {insightMetrics.map((metric) => {
@@ -1003,39 +1018,43 @@ export default function Dashboard() {
               </div>
             ))}
 
-            {/* Logo mitra */}
-            <div className="flex shrink-0 items-center gap-3 rounded-xl bg-white/5 px-3 py-1.5 ring-1 ring-white/10">
-              {partnerLogos.map((logo) =>
-                logo.src ? (
-                  <div key={logo.alt} className="relative h-10 w-10 shrink-0">
-                    <Image
-                      src={logo.src}
-                      alt={logo.alt}
-                      fill
-                      className="object-contain"
-                      sizes="40px"
-                      unoptimized
-                    />
-                  </div>
-                ) : (
-                  <div
-                    key={logo.alt}
-                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-dashed border-white/20 text-[8px] leading-none text-emerald-200/45"
-                  >
-                    Segera
-                  </div>
-                ),
-              )}
-            </div>
+            {/* Logo mitra + email */}
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="flex items-center gap-3 rounded-xl bg-white/5 px-3 py-1.5 ring-1 ring-white/10">
+                {partnerLogos.map((logo) =>
+                  logo.src ? (
+                    <div
+                      key={logo.alt}
+                      className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-white shadow-sm"
+                    >
+                      <Image
+                        src={logo.src}
+                        alt={logo.alt}
+                        fill
+                        className="object-contain p-1"
+                        sizes="44px"
+                        unoptimized
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      key={logo.alt}
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/20 text-[8px] leading-none text-emerald-200/45"
+                    >
+                      Segera
+                    </div>
+                  ),
+                )}
+              </div>
 
-            {/* Email */}
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-700/90 px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
-            >
-              <Mail className="h-4 w-4 text-emerald-200" strokeWidth={2} />
-              <span>{CONTACT_EMAIL}</span>
-            </a>
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="flex shrink-0 items-center gap-2 rounded-lg bg-emerald-700/90 px-3.5 py-2 text-xs font-medium text-white transition-colors hover:bg-emerald-600"
+              >
+                <Mail className="h-4 w-4 text-emerald-200" strokeWidth={2} />
+                <span>{CONTACT_EMAIL}</span>
+              </a>
+            </div>
           </div>
         </footer>
       </div>
