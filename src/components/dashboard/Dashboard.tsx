@@ -43,8 +43,6 @@ type ChartTooltipProps = {
   label?: string;
 };
 
-const PLACEHOLDER_IMAGE = "/manggis-placeholder.png";
-
 const COLOR_A = "#6d28d9";
 const COLOR_B = "#16a34a";
 const COLOR_C = "#64748b";
@@ -641,15 +639,6 @@ export default function Dashboard() {
         <header className="shrink-0 bg-[#0f2e22] px-5 py-2.5">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-white/10">
-                <Image
-                  src={PLACEHOLDER_IMAGE}
-                  alt="Manggis"
-                  fill
-                  className="object-cover"
-                  sizes="56px"
-                />
-              </div>
               <div className="min-w-0">
                 <h1 className="truncate text-xl font-bold text-white">
                   Dashboard Monitoring Manggis
