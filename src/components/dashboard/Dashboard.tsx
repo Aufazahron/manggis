@@ -293,16 +293,16 @@ function GradeDistributionChart({
   const activeIndex = hoverIndex ?? focusedIndex;
 
   return (
-    <div className="flex flex-1 items-center gap-3">
-      <div className="relative h-[120px] w-[120px] shrink-0">
+    <div className="flex flex-1 items-center justify-center gap-3">
+      <div className="relative h-[140px] w-[140px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={gradeDistribution}
               dataKey="value"
               nameKey="name"
-              innerRadius={40}
-              outerRadius={58}
+              innerRadius={45}
+              outerRadius={66}
               paddingAngle={2}
               strokeWidth={0}
               onMouseEnter={(_, index) => setHoverIndex(index)}
@@ -329,7 +329,7 @@ function GradeDistributionChart({
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <span className="text-base">🥭</span>
+          <span className="text-2xl">🥭</span>
         </div>
       </div>
       <ul className="space-y-2 text-xs">
@@ -384,9 +384,9 @@ function ExportDestinationsCard() {
         title="Tujuan Ekspor Utama"
         subtitle="Volume tahunan (UN Comtrade 2024)"
       />
-      <ul className="space-y-1.5">
+      <ul className="flex min-h-0 flex-1 flex-col gap-2">
         {exportDestinations.map((dest, index) => (
-          <li key={dest.country}>
+          <li key={dest.country} className="flex flex-1">
             <button
               type="button"
               onMouseEnter={() => setHoverIndex(index)}
@@ -394,7 +394,7 @@ function ExportDestinationsCard() {
               onClick={() =>
                 setSelectedIndex((current) => (current === index ? undefined : index))
               }
-              className={`flex w-full flex-col rounded-lg border px-3 py-2 text-left transition-colors ${
+              className={`flex h-full w-full flex-col justify-center rounded-lg border px-3 py-2 text-left transition-colors ${
                 activeIndex === index
                   ? "border-emerald-200 bg-emerald-50 ring-1 ring-emerald-200"
                   : "border-slate-100 hover:border-slate-200 hover:bg-slate-50"
@@ -992,7 +992,7 @@ export default function Dashboard() {
                 title="Insight Performa"
                 subtitle="Pergerakan sepanjang 2026"
               />
-              <div className="flex flex-1 flex-col justify-center divide-y divide-slate-100">
+              <div className="flex min-h-0 flex-1 flex-col divide-y divide-slate-100">
                 {insightMetrics.map((metric) => {
                   const TrendIcon = metric.up ? TrendingUp : TrendingDown;
                   const valueColor = insightTrendColor(metric.value);
@@ -1000,7 +1000,7 @@ export default function Dashboard() {
                   return (
                     <div
                       key={metric.label}
-                      className="flex items-center justify-between py-2 first:pt-0"
+                      className="flex flex-1 items-center justify-between"
                     >
                       <div className="min-w-0">
                         <p className="text-xs font-medium text-slate-700">{metric.label}</p>
