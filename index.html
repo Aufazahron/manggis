@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQTT Manggis Subscriber</title>
+  <style>
+    body {
+      margin: 16px;
+      background: #111;
+      color: #eee;
+      font: 14px/1.5 Consolas, monospace;
+      white-space: pre-wrap;
+    }
+    .ok { color: #70e38b; }
+    .error { color: #ff7474; }
+  </style>
+</head>
+<body><span id="status">Menghubungkan...</span>
+<div id="messages"></div>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script>
+  const MQTT_URL = "wss://mqtt.dtek.co.id/mqtt";
+  const MQTT_TOPIC = "dtek/manggis/#";
+  const MQTT_USERNAME = "admin";
+  const MQTT_PASSWORD = "admin";
+
+  const statusElement = document.getElementById("status");
+  const messagesElement = document.getElementById("messages");
+
+  function setStatus(message, className = "") {
+    statusElement.textContent = message;
+    statusElement.className = className;
+  }
+
+  function showMessage(topic, payload) {
+    const time = new Date().toLocaleString("id-ID");
+    const line = document.createElement("div");
+    line.textContent = `[${time}] ${topic}\n${payload}\n`;
+    messagesElement.prepend(line);
+  }
+
+  const client = mqtt.connect(MQTT_URL, {
+    clientId: "web-manggis-" + Date.now() + "-" +
+      Math.random().toString(16).slice(2, 8),
+    username: MQTT_USERNAME,
+    password: MQTT_PASSWORD,
+    clean: true,
+    connectTimeout: 10000,
+    reconnectPeriod: 3000
+  });
+
+  client.on("connect", () => {
+    setStatus(`Terhubung — subscribe ${MQTT_TOPIC}\n`, "ok");
+
+    client.subscribe(MQTT_TOPIC, { qos: 0 }, (error) => {
+      if (error) {
+        setStatus(`Subscribe gagal: ${error.message}\n`, "error");
+      }
+    });
+  });
+
+  client.on("message", (topic, payload) => {
+    showMessage(topic, payload.toString());
+  });
+
+  client.on("reconnect", () => {
+    setStatus("Koneksi terputus, mencoba kembali...\n");
+  });
+
+  client.on("offline", () => {
+    setStatus("Broker sedang offline, mencoba kembali...\n", "error");
+  });
+
+  client.on("error", (error) => {
+    setStatus(`Koneksi gagal: ${error.message}\n`, "error");
+    console.error(error);
+  });
+</script>
+</body>
+</html>
