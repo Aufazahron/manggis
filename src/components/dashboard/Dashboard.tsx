@@ -177,10 +177,14 @@ const summaryStats = [
 
 // Tujuan ekspor manggis Indonesia — data BPS 2024 (via jurnal utami.id/JM v2i2.399).
 // Volume tahunan nasional; Tiongkok + Hongkong = pasar dominan (~75% total ekspor).
+// Tujuan ekspor manggis (HS 080450) 2024 — UN Comtrade/WITS, volume dibulatkan.
+// Tiongkok mendominasi (~48 rb ton), diikuti Hongkong, lalu pasar Timur Tengah & Eropa.
 const exportDestinations = [
-  { country: "Hongkong", flagSrc: "/flags/hk.png", volume: "55.000 ton", share: 50 },
-  { country: "Tiongkok", flagSrc: "/flags/cn.png", volume: "45.000 ton", share: 40 },
-  { country: "Malaysia", flagSrc: "/flags/my.png", volume: "11.000 ton", share: 10 },
+  { country: "Tiongkok", flagSrc: "/flags/cn.png", volume: "47.800 ton", share: "50" },
+  { country: "Hongkong", flagSrc: "/flags/hk.png", volume: "5.200 ton", share: "5" },
+  { country: "Uni Emirat Arab", flagSrc: "/flags/ae.png", volume: "1.000 ton", share: "1" },
+  { country: "Prancis", flagSrc: "/flags/fr.png", volume: "191 ton", share: "<1" },
+  { country: "Belanda", flagSrc: "/flags/nl.png", volume: "134 ton", share: "<1" },
 ];
 
 const gradeDistribution = (["A", "B", "C"] as const).map((gradeId) => ({
@@ -378,9 +382,9 @@ function ExportDestinationsCard() {
       <SectionHeader
         icon={Globe}
         title="Tujuan Ekspor Utama"
-        subtitle="Volume tahunan nasional (BPS 2024)"
+        subtitle="Volume tahunan (UN Comtrade 2024)"
       />
-      <ul className="space-y-2">
+      <ul className="space-y-1.5">
         {exportDestinations.map((dest, index) => (
           <li key={dest.country}>
             <button
@@ -390,7 +394,7 @@ function ExportDestinationsCard() {
               onClick={() =>
                 setSelectedIndex((current) => (current === index ? undefined : index))
               }
-              className={`flex w-full flex-col rounded-lg border px-3 py-3 text-left transition-colors ${
+              className={`flex w-full flex-col rounded-lg border px-3 py-2 text-left transition-colors ${
                 activeIndex === index
                   ? "border-emerald-200 bg-emerald-50 ring-1 ring-emerald-200"
                   : "border-slate-100 hover:border-slate-200 hover:bg-slate-50"
@@ -421,7 +425,7 @@ function ExportDestinationsCard() {
                   <span>
                     Volume: <strong className="text-slate-800">{dest.volume}</strong>
                   </span>
-                  <span>{dest.share}% dari 3 tujuan teratas</span>
+                  <span>{dest.share}% dari total ekspor nasional</span>
                 </span>
               ) : null}
             </button>
@@ -618,9 +622,13 @@ function isGradeFocused(gradeId: GradeId, focusedGrade: GradeId | null): boolean
   return !focusedGrade || focusedGrade === gradeId;
 }
 
+const CANVAS_WIDTH = 1920;
+const CANVAS_HEIGHT = 1080;
+
 export default function Dashboard() {
   const [now, setNow] = useState<Date | null>(null);
   const [focusedGrade, setFocusedGrade] = useState<GradeId | null>(null);
+  const [scale, setScale] = useState(1);
 
   const toggleGradeFocus = (gradeId: GradeId) => {
     setFocusedGrade((current) => (current === gradeId ? null : gradeId));
@@ -632,11 +640,30 @@ export default function Dashboard() {
     return () => clearInterval(tick);
   }, []);
 
+  useEffect(() => {
+    const updateScale = () => {
+      setScale(
+        Math.min(window.innerWidth / CANVAS_WIDTH, window.innerHeight / CANVAS_HEIGHT),
+      );
+    };
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
   return (
-    <div className="flex justify-center bg-[#dfe4ea]">
-      <div className="flex aspect-[9/16] h-[max(1920px,min(100dvh,calc(100dvw*16/9)))] w-[max(1080px,min(100dvw,calc(100dvh*9/16)))] min-h-[1920px] min-w-[1080px] shrink-0 flex-col overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]">
+    <div className="flex h-dvh w-dvw items-center justify-center overflow-hidden bg-[#dfe4ea]">
+      <div
+        style={{
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: "center center",
+        }}
+        className="flex shrink-0 flex-col overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+      >
         {/* Header */}
-        <header className="shrink-0 bg-[#0f2e22] px-5 py-2.5">
+        <header className="shrink-0 bg-[#0f2e22] px-6 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
               <div className="min-w-0">
@@ -661,64 +688,16 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <main className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_minmax(0,1fr)_auto_auto_auto] gap-2 overflow-hidden px-4 py-3">
-          {/* Video Proses */}
-          <Card className="flex min-h-0 flex-col overflow-hidden">
-            <ProcessVideoPlayer className="min-h-0 flex-1" />
-          </Card>
+        <main className="grid min-h-0 flex-1 grid-rows-[minmax(0,1.08fr)_minmax(0,1fr)] gap-3 overflow-hidden p-4">
+          {/* Baris atas: Video · Trend Harga · Harga per Grade */}
+          <div className="grid min-h-0 grid-cols-12 gap-3">
+            {/* Video Proses */}
+            <Card className="col-span-5 flex min-h-0 flex-col overflow-hidden">
+              <ProcessVideoPlayer className="min-h-0 flex-1" />
+            </Card>
 
-          {/* Harga per Grade */}
-          <Card className="flex min-h-0 flex-col overflow-hidden">
-            <div className="grid min-h-0 flex-1 grid-cols-3 gap-3">
-              {GRADE_PRICES.map((grade) => {
-                const isFocused = focusedGrade === grade.id;
-                const isDimmed = focusedGrade !== null && !isFocused;
-
-                return (
-                  <button
-                    key={grade.id}
-                    type="button"
-                    onClick={() => toggleGradeFocus(grade.id as GradeId)}
-                    className={`flex h-full min-h-0 flex-col overflow-hidden rounded-xl border bg-white text-left transition-all ${
-                      isFocused
-                        ? "scale-[1.02] border-emerald-400 ring-2 ring-emerald-500/60"
-                        : isDimmed
-                          ? "border-slate-200 opacity-50"
-                          : "border-slate-200 hover:border-emerald-200"
-                    }`}
-                  >
-                    <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
-                      <Image
-                        src={grade.image}
-                        alt={grade.label}
-                        fill
-                        className="object-cover"
-                        style={{ objectPosition: grade.imagePosition }}
-                        sizes="400px"
-                        unoptimized
-                        priority={grade.id === "A"}
-                      />
-                      <span
-                        className={`absolute top-3 left-3 z-10 flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-bold shadow-md ${grade.badge}`}
-                      >
-                        <grade.icon className="h-4 w-4" strokeWidth={2.5} />
-                        {grade.badgeLabel}
-                      </span>
-                    </div>
-                    <div
-                      className={`${grade.bar} shrink-0 px-3 py-3.5 text-center text-2xl font-bold text-white`}
-                    >
-                      {formatPrice(grade.price)}/kg
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </Card>
-
-          {/* Trend + Kebutuhan Ekspor */}
-          <div className="grid grid-cols-2 items-stretch gap-2">
-            <Card className="flex flex-col">
+            {/* Trend Harga */}
+            <Card className="col-span-4 flex min-h-0 flex-col overflow-hidden">
               <SectionHeader
                 icon={Globe}
                 title="Trend Harga"
@@ -755,7 +734,7 @@ export default function Dashboard() {
                   );
                 })}
               </div>
-              <div className="relative min-h-[320px] flex-1">
+              <div className="relative min-h-0 flex-1">
                 <div className="absolute inset-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={trendData} margin={{ top: 8, right: 12, left: 0, bottom: 4 }}>
@@ -808,7 +787,93 @@ export default function Dashboard() {
               </div>
             </Card>
 
-            <Card className="flex flex-col">
+            {/* Harga per Grade — stack vertikal */}
+            <div className="col-span-3 flex min-h-0 flex-col gap-2">
+              {GRADE_PRICES.map((grade) => {
+                const isFocused = focusedGrade === grade.id;
+                const isDimmed = focusedGrade !== null && !isFocused;
+
+                return (
+                  <button
+                    key={grade.id}
+                    type="button"
+                    onClick={() => toggleGradeFocus(grade.id as GradeId)}
+                    className={`flex min-h-0 flex-1 items-stretch overflow-hidden rounded-xl border bg-white text-left transition-all ${
+                      isFocused
+                        ? "scale-[1.01] border-emerald-400 ring-2 ring-emerald-500/60"
+                        : isDimmed
+                          ? "border-slate-200 opacity-50"
+                          : "border-slate-200 hover:border-emerald-200"
+                    }`}
+                  >
+                    <div className="relative aspect-square h-full shrink-0 overflow-hidden bg-black">
+                      <Image
+                        src={grade.image}
+                        alt={grade.label}
+                        fill
+                        className="object-cover"
+                        style={{ objectPosition: grade.imagePosition }}
+                        sizes="160px"
+                        unoptimized
+                        priority={grade.id === "A"}
+                      />
+                      <span
+                        className={`absolute top-1.5 left-1.5 z-10 flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-bold shadow ${grade.badge}`}
+                      >
+                        <grade.icon className="h-3 w-3" strokeWidth={2.5} />
+                        {grade.badgeLabel}
+                      </span>
+                    </div>
+                    <div
+                      className={`${grade.bar} flex flex-1 flex-col justify-center px-4 text-white`}
+                    >
+                      <span className="text-[11px] font-medium text-white/80">
+                        {grade.label}
+                      </span>
+                      <span className="text-2xl leading-tight font-bold">
+                        {formatPrice(grade.price)}/kg
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Baris bawah: Ringkasan · Kebutuhan Ekspor · Tujuan · Distribusi · Insight */}
+          <div className="grid min-h-0 grid-cols-12 gap-3">
+            {/* Ringkasan Nasional */}
+            <Card className="col-span-3 flex min-h-0 flex-col">
+              <SectionHeader
+                icon={Package}
+                title="Ringkasan Nasional"
+                subtitle="Komoditas manggis Indonesia (BPS/Kementan 2024)"
+              />
+              <div className="grid min-h-0 flex-1 grid-cols-2 gap-2">
+                {summaryStats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="flex flex-col rounded-lg border border-slate-100 bg-slate-50/80 p-2.5"
+                  >
+                    <div
+                      className={`mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg ${stat.bg}`}
+                    >
+                      <stat.icon className={`h-4 w-4 ${stat.color}`} strokeWidth={2} />
+                    </div>
+                    <p className="text-[11px] text-slate-500">{stat.label}</p>
+                    <p className={`mt-0.5 text-lg leading-tight font-bold ${stat.color}`}>
+                      {stat.value}
+                    </p>
+                    <p className="mt-auto pt-1 text-[10px] leading-snug text-slate-400">
+                      {stat.hint}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Kebutuhan Jumlah Ekspor */}
+            <Card className="col-span-3 flex min-h-0 flex-col overflow-hidden">
               <SectionHeader
                 icon={Globe}
                 title="Kebutuhan Jumlah Ekspor"
@@ -823,7 +888,7 @@ export default function Dashboard() {
                 <p className="mb-2 text-xs font-medium text-slate-600">
                   Komposisi total {EXPORT_TOTAL_TON.toLocaleString("id-ID")} ton
                 </p>
-                <div className="flex h-7 w-full overflow-hidden rounded-full">
+                <div className="flex h-6 w-full overflow-hidden rounded-full">
                   {exportNeeds.map((item) => (
                     <button
                       key={item.label}
@@ -869,7 +934,7 @@ export default function Dashboard() {
                       key={item.label}
                       type="button"
                       onClick={() => toggleGradeFocus(item.gradeId)}
-                      className={`block w-full rounded-lg border px-3 py-2 text-left transition-all ${
+                      className={`block w-full rounded-lg border px-3 py-1.5 text-left transition-all ${
                         isFocused
                           ? "border-emerald-300 bg-emerald-50/50 ring-1 ring-emerald-200"
                           : isDimmed
@@ -877,11 +942,11 @@ export default function Dashboard() {
                             : "border-slate-100 hover:border-slate-200"
                       }`}
                     >
-                      <div className="mb-2 flex items-center justify-between text-sm">
+                      <div className="mb-1.5 flex items-center justify-between text-sm">
                         <span className="font-medium text-slate-700">{item.label}</span>
                         <span className="font-bold text-slate-900">{item.value}</span>
                       </div>
-                      <div className="h-5 w-full rounded-full bg-slate-100">
+                      <div className="h-4 w-full rounded-full bg-slate-100">
                         <div
                           className="h-full rounded-full transition-all"
                           style={{
@@ -891,9 +956,6 @@ export default function Dashboard() {
                           }}
                         />
                       </div>
-                      <p className="mt-1.5 text-[10px] text-slate-400">
-                        {item.percent}% dari total kebutuhan
-                      </p>
                     </button>
                   );
                 })}
@@ -908,39 +970,14 @@ export default function Dashboard() {
                 </p>
               </div>
             </Card>
-          </div>
 
-          {/* Ringkasan Hari Ini */}
-          <Card>
-            <SectionHeader
-              icon={Package}
-              title="Ringkasan Nasional"
-              subtitle="Komoditas manggis Indonesia (BPS/Kementan 2024)"
-            />
-            <div className="grid grid-cols-4 gap-2">
-              {summaryStats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-lg border border-slate-100 bg-slate-50/80 p-3"
-                >
-                  <div
-                    className={`mb-2 flex h-10 w-10 items-center justify-center rounded-lg ${stat.bg}`}
-                  >
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} strokeWidth={2} />
-                  </div>
-                  <p className="text-xs text-slate-500">{stat.label}</p>
-                  <p className={`mt-1 text-xl font-bold ${stat.color}`}>{stat.value}</p>
-                  <p className="mt-1 text-[10px] leading-snug text-slate-400">{stat.hint}</p>
-                </div>
-              ))}
+            {/* Tujuan Ekspor Utama */}
+            <div className="col-span-2 min-h-0">
+              <ExportDestinationsCard />
             </div>
-          </Card>
 
-          {/* Bottom row */}
-          <div className="grid min-h-0 grid-cols-3 gap-2 overflow-hidden">
-            <ExportDestinationsCard />
-
-            <Card className="flex flex-col">
+            {/* Distribusi Kategori */}
+            <Card className="col-span-2 flex min-h-0 flex-col">
               <SectionHeader icon={Package} title="Distribusi Kategori" />
               <GradeDistributionChart
                 focusedGrade={focusedGrade}
@@ -948,7 +985,8 @@ export default function Dashboard() {
               />
             </Card>
 
-            <Card className="flex flex-col">
+            {/* Insight Performa */}
+            <Card className="col-span-2 flex min-h-0 flex-col">
               <SectionHeader
                 icon={TrendingUp}
                 title="Insight Performa"
@@ -964,11 +1002,11 @@ export default function Dashboard() {
                       key={metric.label}
                       className="flex items-center justify-between py-2 first:pt-0"
                     >
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-xs font-medium text-slate-700">{metric.label}</p>
                         <p className="text-[10px] text-slate-400">{metric.comparison}</p>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex shrink-0 items-center gap-1.5">
                         <span className={`text-lg font-bold ${valueColor}`}>
                           {metric.value}
                         </span>
