@@ -500,25 +500,140 @@ const PROCESS_VIDEOS = [
   },
 ] as const;
 
+/**
+ * Player khusus browser Smart TV (Coocaa / Android WebView / X5):
+ * - Hindari remount via key (sering bikin decoder WebView stuck)
+ * - preload metadata (preload=auto sering gagal di TV)
+ * - Atribut X5/WebKit untuk kernel browser TV China
+ * - Retry play agresif + recovery on error
+ */
 function ProcessVideoPlayer({ className = "" }: { className?: string }) {
   const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [failed, setFailed] = useState(false);
   const userPausedRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const clip = PROCESS_VIDEOS[index];
 
-  const startPlayback = () => {
+  const clearRetry = () => {
+    if (retryTimerRef.current) {
+      clearInterval(retryTimerRef.current);
+      retryTimerRef.current = null;
+    }
+  };
+
+  const tryPlay = () => {
     const video = videoRef.current;
     if (!video || userPausedRef.current) return;
 
-    void video.play().catch(() => setPlaying(false));
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("muted", "");
+    video.volume = 0;
+
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      void playPromise
+        .then(() => {
+          setPlaying(true);
+          setFailed(false);
+          clearRetry();
+        })
+        .catch(() => {
+          setPlaying(false);
+        });
+    }
   };
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
     userPausedRef.current = false;
-    startPlayback();
-  }, [index]);
+    setFailed(false);
+    setPlaying(false);
+    clearRetry();
+
+    video.pause();
+    video.removeAttribute("src");
+    while (video.firstChild) {
+      video.removeChild(video.firstChild);
+    }
+
+    const source = document.createElement("source");
+    source.src = clip.src;
+    source.type = "video/mp4";
+    video.appendChild(source);
+
+    video.load();
+
+    const onCanPlay = () => tryPlay();
+    const onLoadedData = () => tryPlay();
+    const onPlaying = () => {
+      setPlaying(true);
+      setFailed(false);
+      clearRetry();
+    };
+    const onPause = () => setPlaying(false);
+    let errorJump: ReturnType<typeof setTimeout> | null = null;
+    const onError = () => {
+      setFailed(true);
+      setPlaying(false);
+      // Coba clip berikutnya setelah error decoder
+      errorJump = setTimeout(() => {
+        setIndex((current) => (current + 1) % PROCESS_VIDEOS.length);
+      }, 2500);
+    };
+    const onEnded = () => {
+      setIndex((current) => (current + 1) % PROCESS_VIDEOS.length);
+    };
+
+    // Atribut non-standar untuk kernel browser TV China (X5 / WebKit)
+    video.setAttribute("webkit-playsinline", "true");
+    video.setAttribute("playsinline", "true");
+    video.setAttribute("x5-playsinline", "true");
+    video.setAttribute("x5-video-player-type", "h5");
+    video.setAttribute("x5-video-player-fullscreen", "false");
+    video.setAttribute("x5-video-orientation", "landscape");
+
+    video.addEventListener("canplay", onCanPlay);
+    video.addEventListener("loadeddata", onLoadedData);
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("pause", onPause);
+    video.addEventListener("error", onError);
+    video.addEventListener("ended", onEnded);
+
+    // Retry berkala — autoplay policy / decoder TV sering butuh beberapa percobaan
+    retryTimerRef.current = setInterval(() => {
+      if (!userPausedRef.current && video.paused) tryPlay();
+    }, 1500);
+
+    // First attempt after a tick (WebView butuh delay setelah load())
+    const immediate = window.setTimeout(tryPlay, 120);
+
+    return () => {
+      window.clearTimeout(immediate);
+      if (errorJump) clearTimeout(errorJump);
+      clearRetry();
+      video.removeEventListener("canplay", onCanPlay);
+      video.removeEventListener("loadeddata", onLoadedData);
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("pause", onPause);
+      video.removeEventListener("error", onError);
+      video.removeEventListener("ended", onEnded);
+    };
+  }, [index, clip.src]);
+
+  useEffect(() => {
+    // Resume saat tab/TV browser kembali aktif
+    const onVisible = () => {
+      if (document.visibilityState === "visible") tryPlay();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, []);
 
   const togglePlayback = () => {
     const video = videoRef.current;
@@ -526,9 +641,10 @@ function ProcessVideoPlayer({ className = "" }: { className?: string }) {
 
     if (video.paused) {
       userPausedRef.current = false;
-      void video.play().catch(() => setPlaying(false));
+      tryPlay();
     } else {
       userPausedRef.current = true;
+      clearRetry();
       video.pause();
     }
   };
@@ -539,22 +655,19 @@ function ProcessVideoPlayer({ className = "" }: { className?: string }) {
     >
       <video
         ref={videoRef}
-        key={clip.src}
-        className="h-full w-full object-cover"
-        src={clip.src}
+        className="absolute inset-0 h-full w-full object-cover"
         autoPlay
         muted
+        loop={false}
         playsInline
-        preload="auto"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
-        onCanPlay={startPlayback}
-        onEnded={() => setIndex((current) => (current + 1) % PROCESS_VIDEOS.length)}
+        preload="metadata"
+        controls={false}
+        disablePictureInPicture
       />
 
       <div className="pointer-events-none absolute inset-0 bg-black/15" />
 
-      <div className="absolute top-3 right-3 flex gap-1.5">
+      <div className="absolute top-3 right-3 z-20 flex gap-1.5">
         {PROCESS_VIDEOS.map((item, videoIndex) => (
           <span
             key={item.step}
@@ -591,7 +704,7 @@ function ProcessVideoPlayer({ className = "" }: { className?: string }) {
         <span className="flex min-w-0 items-center gap-2">
           <Video className="h-4 w-4 shrink-0 text-emerald-300" />
           <span className="truncate text-sm font-medium text-white">
-            {clip.step}: {clip.caption}
+            {failed ? "Memuat ulang video…" : `${clip.step}: ${clip.caption}`}
           </span>
         </span>
         <span className="shrink-0 rounded bg-white/15 px-2 py-0.5 text-[10px] font-medium text-white/90">
@@ -625,6 +738,15 @@ function isGradeFocused(gradeId: GradeId, focusedGrade: GradeId | null): boolean
 const CANVAS_WIDTH = 1920;
 const CANVAS_HEIGHT = 1080;
 
+function getViewportSize() {
+  // visualViewport lebih akurat di browser TV / WebView yang punya chrome UI
+  const vv = typeof window !== "undefined" ? window.visualViewport : null;
+  return {
+    width: Math.max(1, Math.floor(vv?.width ?? window.innerWidth)),
+    height: Math.max(1, Math.floor(vv?.height ?? window.innerHeight)),
+  };
+}
+
 export default function Dashboard() {
   const [now, setNow] = useState<Date | null>(null);
   const [focusedGrade, setFocusedGrade] = useState<GradeId | null>(null);
@@ -642,24 +764,44 @@ export default function Dashboard() {
 
   useEffect(() => {
     const updateScale = () => {
-      setScale(
-        Math.min(window.innerWidth / CANVAS_WIDTH, window.innerHeight / CANVAS_HEIGHT),
-      );
+      const { width, height } = getViewportSize();
+      // Fit contain — cocok untuk TV 43" FHD (1920×1080) maupun resolusi lain
+      setScale(Math.min(width / CANVAS_WIDTH, height / CANVAS_HEIGHT));
     };
     updateScale();
     window.addEventListener("resize", updateScale);
-    return () => window.removeEventListener("resize", updateScale);
+    window.visualViewport?.addEventListener("resize", updateScale);
+    window.visualViewport?.addEventListener("scroll", updateScale);
+    return () => {
+      window.removeEventListener("resize", updateScale);
+      window.visualViewport?.removeEventListener("resize", updateScale);
+      window.visualViewport?.removeEventListener("scroll", updateScale);
+    };
   }, []);
 
   return (
-    <div className="flex h-dvh w-full items-center justify-center overflow-hidden bg-[#dfe4ea]">
+    <div
+      className="flex w-full items-center justify-center overflow-hidden bg-[#dfe4ea]"
+      style={{
+        // Fallback berlapis untuk browser TV lama yang tidak support dvh
+        height: "100vh",
+        minHeight: "-webkit-fill-available",
+        maxHeight: "100dvh",
+      }}
+    >
+      {/*
+        Pakai CSS zoom (bukan transform:scale) agar hardware video decoder
+        di Android WebView / Coocaa tidak rusak. Zoom didukung Chromium/WebView.
+      */}
       <div
-        style={{
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
-          transform: `scale(${scale})`,
-          transformOrigin: "center center",
-        }}
+        style={
+          {
+            width: CANVAS_WIDTH,
+            height: CANVAS_HEIGHT,
+            // CSS zoom: aman untuk hardware video decoder (transform:scale sering merusaknya di WebView TV)
+            zoom: scale,
+          } as React.CSSProperties
+        }
         className="flex shrink-0 flex-col overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
       >
         {/* Header */}

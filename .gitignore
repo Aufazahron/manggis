@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# backup video asli (High Profile) — terlalu besar untuk repo
+/public/videos/_original-high/

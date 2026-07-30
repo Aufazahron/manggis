@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,15 @@ export const metadata: Metadata = {
   description: "Sistem pemantauan real-time stok dan kualitas manggis",
 };
 
+// Viewport khusus kiosk/TV — cegah zoom gesture & pastikan full-bleed di Coocaa
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -25,11 +34,11 @@ export default function RootLayout({
   return (
     <html
       lang="id"
-      className={`${geistSans.variable} ${geistMono.variable} scrollbar-thin h-full overflow-auto antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} scrollbar-thin h-full overflow-hidden antialiased`}
       suppressHydrationWarning
     >
       <body
-        className="scrollbar-thin min-h-full overflow-auto bg-slate-100 antialiased"
+        className="scrollbar-thin h-full overflow-hidden bg-slate-100 antialiased"
         suppressHydrationWarning
       >
         {children}
