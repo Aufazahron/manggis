@@ -622,9 +622,13 @@ function isGradeFocused(gradeId: GradeId, focusedGrade: GradeId | null): boolean
   return !focusedGrade || focusedGrade === gradeId;
 }
 
+const CANVAS_WIDTH = 1920;
+const CANVAS_HEIGHT = 1080;
+
 export default function Dashboard() {
   const [now, setNow] = useState<Date | null>(null);
   const [focusedGrade, setFocusedGrade] = useState<GradeId | null>(null);
+  const [scale, setScale] = useState(1);
 
   const toggleGradeFocus = (gradeId: GradeId) => {
     setFocusedGrade((current) => (current === gradeId ? null : gradeId));
@@ -636,9 +640,28 @@ export default function Dashboard() {
     return () => clearInterval(tick);
   }, []);
 
+  useEffect(() => {
+    const updateScale = () => {
+      setScale(
+        Math.min(window.innerWidth / CANVAS_WIDTH, window.innerHeight / CANVAS_HEIGHT),
+      );
+    };
+    updateScale();
+    window.addEventListener("resize", updateScale);
+    return () => window.removeEventListener("resize", updateScale);
+  }, []);
+
   return (
-    <div className="flex h-dvh w-full justify-center overflow-hidden bg-[#dfe4ea]">
-      <div className="flex h-full w-full flex-col overflow-hidden bg-[#eef1f4] text-slate-900">
+    <div className="flex h-dvh w-full items-center justify-center overflow-hidden bg-[#dfe4ea]">
+      <div
+        style={{
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: "center center",
+        }}
+        className="flex shrink-0 flex-col overflow-hidden bg-[#eef1f4] text-slate-900 shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+      >
         {/* Header */}
         <header className="shrink-0 bg-[#0f2e22] px-6 py-3">
           <div className="flex items-center justify-between gap-3">
