@@ -15,7 +15,7 @@ import {
   Weight,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { GradeChart, PriceTrendChart } from './components/Charts'
 import { VideoCarousel } from './components/VideoCarousel'
 import {
@@ -39,6 +39,10 @@ import './App.css'
 
 type LayoutMode = 'landscape' | 'portrait'
 
+/** Desain referensi TV 16:9 — di-scale ke visualViewport (abaikan chrome browser). */
+const CANVAS_WIDTH = 1920
+const CANVAS_HEIGHT = 1080
+
 const SUMMARY_ICONS: Record<(typeof summaryStats)[number]['tone'], LucideIcon> = {
   violet: Weight,
   sky: Truck,
@@ -54,14 +58,27 @@ const GRADE_ICONS: Record<GradeId, LucideIcon> = {
 
 function getViewportSize() {
   const vv = typeof window !== 'undefined' ? window.visualViewport : null
+  const widths = [
+    vv?.width,
+    document.documentElement?.clientWidth,
+    window.innerWidth,
+  ].filter((n): n is number => typeof n === 'number' && n > 0)
+  const heights = [
+    vv?.height,
+    document.documentElement?.clientHeight,
+    window.innerHeight,
+  ].filter((n): n is number => typeof n === 'number' && n > 0)
+
+  // Ambil nilai terkecil agar chrome browser TV tidak membuat konten overflow
   return {
-    width: Math.max(1, Math.floor(vv?.width ?? window.innerWidth)),
-    height: Math.max(1, Math.floor(vv?.height ?? window.innerHeight)),
+    width: Math.max(1, Math.floor(Math.min(...widths))),
+    height: Math.max(1, Math.floor(Math.min(...heights))),
+    offsetTop: Math.max(0, Math.floor(vv?.offsetTop ?? 0)),
+    offsetLeft: Math.max(0, Math.floor(vv?.offsetLeft ?? 0)),
   }
 }
 
 function resolveLayoutMode(width: number, height: number): LayoutMode {
-  // Target utama: horizontal. Stack portrait hanya bila layar tegak & relatif sempit.
   const isLandscape = width >= height
   const isWideEnough = width >= 1024
   if (isLandscape || isWideEnough) return 'landscape'
@@ -145,6 +162,13 @@ export default function App() {
   const [now, setNow] = useState<Date | null>(null)
   const [focusedGrade, setFocusedGrade] = useState<GradeId | null>(null)
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('landscape')
+  const [scale, setScale] = useState(1)
+  const [viewportBox, setViewportBox] = useState({
+    width: CANVAS_WIDTH,
+    height: CANVAS_HEIGHT,
+    offsetTop: 0,
+    offsetLeft: 0,
+  })
 
   const toggleGradeFocus = (gradeId: GradeId) => {
     setFocusedGrade((current) => (current === gradeId ? null : gradeId))
@@ -158,12 +182,26 @@ export default function App() {
 
   useEffect(() => {
     const updateLayout = () => {
-      const { width, height } = getViewportSize()
-      const mode = resolveLayoutMode(width, height)
+      const box = getViewportSize()
+      const mode = resolveLayoutMode(box.width, box.height)
+      // Contain-fit + buffer kecil untuk rounding / chrome TV yang tidak akurat
+      const nextScale =
+        Math.min(box.width / CANVAS_WIDTH, box.height / CANVAS_HEIGHT) * 0.992
+
       setLayoutMode(mode)
-      document.documentElement.dataset.layout = mode
+      setViewportBox(box)
+      setScale(nextScale)
+
+      const root = document.documentElement
+      root.dataset.layout = mode
       document.body.dataset.layout = mode
+      root.style.setProperty('--vv-width', `${box.width}px`)
+      root.style.setProperty('--vv-height', `${box.height}px`)
+      root.style.setProperty('--vv-top', `${box.offsetTop}px`)
+      root.style.setProperty('--vv-left', `${box.offsetLeft}px`)
+      root.style.setProperty('--canvas-scale', String(nextScale))
     }
+
     updateLayout()
     window.addEventListener('resize', updateLayout)
     window.addEventListener('orientationchange', updateLayout)
@@ -177,9 +215,32 @@ export default function App() {
     }
   }, [])
 
+  const landscapeStyle =
+    layoutMode === 'landscape'
+      ? ({
+          width: CANVAS_WIDTH,
+          height: CANVAS_HEIGHT,
+          // CSS zoom aman untuk hardware video decoder di WebView / Coocaa
+          zoom: scale,
+        } as CSSProperties)
+      : undefined
+
   return (
-    <div className="viewport" data-layout={layoutMode}>
-      <div className="canvas" data-layout={layoutMode}>
+    <div
+      className="viewport"
+      data-layout={layoutMode}
+      style={
+        layoutMode === 'landscape'
+          ? {
+              width: viewportBox.width,
+              height: viewportBox.height,
+              top: viewportBox.offsetTop,
+              left: viewportBox.offsetLeft,
+            }
+          : undefined
+      }
+    >
+      <div className="canvas" data-layout={layoutMode} style={landscapeStyle}>
         <header className="topbar">
           <div className="brand">
             <h1>Dashboard Monitoring Manggis</h1>

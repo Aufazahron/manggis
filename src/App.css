@@ -32,8 +32,6 @@ body,
   margin: 0;
   width: 100%;
   height: 100%;
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
   background: var(--bg-outer);
   overscroll-behavior: none;
   touch-action: manipulation;
@@ -44,6 +42,11 @@ body[data-layout='landscape'],
 html[data-layout='landscape'] #root,
 body[data-layout='landscape'] #root {
   overflow: hidden;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 html[data-layout='portrait'],
@@ -54,6 +57,7 @@ body[data-layout='portrait'] #root {
   overflow-y: auto;
   height: auto;
   min-height: 100%;
+  position: static;
 }
 
 button,
@@ -92,30 +96,31 @@ img {
 .viewport {
   display: flex;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-  align-items: stretch;
+  align-items: center;
   justify-content: center;
   background: var(--bg-outer);
+  overflow: hidden;
 }
 
 .viewport[data-layout='landscape'] {
-  height: 100vh;
-  height: 100dvh;
-  max-height: 100dvh;
+  position: fixed;
+  /* ukuran diisi via JS dari visualViewport agar chrome browser TV tidak memotong footer */
+  max-width: 100%;
+  max-height: 100%;
   overflow: hidden;
 }
 
 .viewport[data-layout='portrait'] {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100dvh;
   height: auto;
   overflow: visible;
+  align-items: stretch;
 }
 
 .canvas {
   display: flex;
-  width: 100%;
-  max-width: 100%;
   flex-direction: column;
   background: var(--bg-canvas);
   color: var(--text);
@@ -123,12 +128,14 @@ img {
 }
 
 .canvas[data-layout='landscape'] {
-  height: 100%;
-  min-height: 0;
+  flex-shrink: 0;
   overflow: hidden;
+  /* width/height/zoom di-set inline dari App.tsx */
 }
 
 .canvas[data-layout='portrait'] {
+  width: 100%;
+  max-width: 100%;
   height: auto;
   min-height: 100dvh;
   overflow: visible;
@@ -138,7 +145,7 @@ img {
 .footer {
   flex-shrink: 0;
   background: var(--chrome);
-  padding: clamp(8px, 1.2vh, 14px) clamp(12px, 1.4vw, 24px);
+  padding: 12px 24px;
 }
 
 .topbar {
@@ -149,7 +156,7 @@ img {
 }
 
 .brand h1 {
-  font-size: clamp(15px, 1.15vw + 0.4vh, 22px);
+  font-size: 20px;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
@@ -159,7 +166,7 @@ img {
 
 .brand p {
   margin-top: 2px;
-  font-size: clamp(10px, 0.7vw + 0.25vh, 13px);
+  font-size: 12px;
   color: rgba(167, 243, 208, 0.9);
   font-style: italic;
   white-space: nowrap;
@@ -179,7 +186,7 @@ img {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: clamp(10px, 0.7vw + 0.25vh, 13px);
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -194,8 +201,8 @@ img {
   min-height: 0;
   display: grid;
   grid-template-rows: minmax(0, 1.08fr) minmax(0, 1fr);
-  gap: clamp(8px, 1vw, 12px);
-  padding: clamp(8px, 1vw, 16px);
+  gap: 12px;
+  padding: 16px;
   overflow: hidden;
 }
 
@@ -204,6 +211,8 @@ img {
   grid-template-rows: auto;
   overflow: visible;
   height: auto;
+  gap: clamp(8px, 1vw, 12px);
+  padding: clamp(8px, 1vw, 16px);
 }
 
 .row-top,
@@ -211,7 +220,7 @@ img {
   min-height: 0;
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: clamp(8px, 1vw, 12px);
+  gap: 12px;
 }
 
 .canvas[data-layout='portrait'] .row-top,
@@ -219,6 +228,7 @@ img {
   grid-template-columns: 1fr;
   height: auto;
   min-height: 0;
+  gap: clamp(8px, 1vw, 12px);
 }
 
 .card {
@@ -1274,225 +1284,54 @@ img {
   color: #a7f3d0;
 }
 
-/* —— Landscape tablet / window kecil: rapatkan kolom —— */
-@media (orientation: landscape) and (max-width: 1280px) {
-  .brand p {
-    display: none;
-  }
-
-  .footer-feature {
-    display: none;
-  }
-
-  .grade-price-bar strong {
-    font-size: clamp(14px, 1.6vw, 20px);
-  }
-
-  .summary-value {
-    font-size: clamp(13px, 1.4vw, 17px);
-  }
+/*
+ * Landscape memakai canvas 1920×1080 + CSS zoom (contain-fit visualViewport).
+ * Jangan reflow grid berdasarkan lebar viewport nyata — itu mematahkan layout TV.
+ * Penyesuaian HP/PC tegak hanya lewat data-layout=portrait.
+ */
+.canvas[data-layout='portrait'] .main-grid {
+  display: flex;
+  flex-direction: column;
 }
 
-@media (orientation: landscape) and (max-width: 1100px) {
-  .main-grid {
-    grid-template-rows: minmax(0, 1.35fr) minmax(0, 1fr);
-  }
-
-  .row-top {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    grid-template-rows: minmax(0, 1.25fr) minmax(0, 0.85fr);
-  }
-
-  .video-card {
-    grid-column: span 4;
-    grid-row: 1;
-  }
-
-  .trend-card {
-    grid-column: span 2;
-    grid-row: 1;
-  }
-
-  .grade-prices {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    flex-direction: row;
-  }
-
-  .grade-price {
-    min-width: 0;
-  }
-
-  .grade-price-media {
-    width: clamp(64px, 10vw, 96px);
-    aspect-ratio: 1;
-    height: auto;
-    align-self: stretch;
-  }
-
-  .row-bottom {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-  }
-
-  .summary-card,
-  .export-card {
-    grid-column: span 3;
-  }
-
-  .dest-wrap,
-  .grade-card,
-  .insight-card {
-    grid-column: span 2;
-  }
+.canvas[data-layout='portrait'] .row-top,
+.canvas[data-layout='portrait'] .row-bottom {
+  display: flex;
+  flex-direction: column;
 }
 
-/* —— Landscape HP / window sangat pendek —— */
-@media (orientation: landscape) and (max-height: 520px) {
-  .topbar,
-  .footer {
-    padding-block: 6px;
-  }
-
-  .brand h1 {
-    font-size: 14px;
-  }
-
-  .clock {
-    flex-direction: row;
-    gap: 12px;
-  }
-
-  .main-grid {
-    gap: 6px;
-    padding: 6px;
-  }
-
-  .section-head p,
-  .panel-head p,
-  .summary-hint,
-  .export-footer {
-    display: none;
-  }
-
-  .grade-price-bar strong {
-    font-size: 14px;
-  }
-
-  .partner-logo {
-    width: 32px;
-    height: 32px;
-  }
-
-  .footer-mail span {
-    display: none;
-  }
+.canvas[data-layout='portrait'] .brand h1 {
+  font-size: clamp(16px, 4.5vw, 20px);
+  white-space: normal;
 }
 
-@media (orientation: landscape) and (max-width: 900px) {
-  .viewport[data-layout='landscape'],
-  .canvas[data-layout='landscape'] {
-    height: auto;
-    min-height: 100dvh;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .main-grid {
-    grid-template-rows: auto;
-    overflow: visible;
-    flex: none;
-  }
-
-  .row-top,
-  .row-bottom {
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: none;
-    height: auto;
-  }
-
-  .video-card {
-    grid-column: 1 / -1;
-    grid-row: auto;
-    min-height: 180px;
-  }
-
-  .trend-card,
-  .grade-prices,
-  .summary-card,
-  .export-card,
-  .dest-wrap,
-  .grade-card,
-  .insight-card {
-    grid-column: span 1;
-    grid-row: auto;
-    min-height: 220px;
-    height: auto;
-  }
-
-  .grade-prices {
-    flex-direction: column;
-  }
-
-  .footer {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .footer-partners {
-    width: 100%;
-    justify-content: space-between;
-  }
+.canvas[data-layout='portrait'] .brand p {
+  white-space: normal;
+  font-size: 12px;
 }
 
-/* —— Portrait HP/PC tab tegak: stack + scroll —— */
-@media (orientation: portrait), (max-width: 720px) and (max-aspect-ratio: 13/10) {
-  .canvas[data-layout='portrait'] .main-grid {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .canvas[data-layout='portrait'] .row-top,
-  .canvas[data-layout='portrait'] .row-bottom {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .canvas[data-layout='portrait'] .clock {
-    flex-direction: column;
-  }
-
-  .canvas[data-layout='portrait'] .brand p {
-    white-space: normal;
-  }
-
-  .canvas[data-layout='portrait'] .footer {
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-
-  .canvas[data-layout='portrait'] .footer-feature {
-    flex: 1 1 140px;
-  }
-
-  .canvas[data-layout='portrait'] .footer-partners {
-    width: 100%;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-
-  .canvas[data-layout='portrait'] .grade-prices {
-    display: flex;
-    flex-direction: column;
-  }
+.canvas[data-layout='portrait'] .footer {
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 16px;
 }
 
-/* —— TV / layar lebar: rapat penuh tanpa letterbox —— */
-@media (orientation: landscape) and (min-width: 1600px) {
-  .brand h1 {
-    font-size: 22px;
-  }
+.canvas[data-layout='portrait'] .footer-feature {
+  flex: 1 1 140px;
+}
 
-  .grade-price-bar strong {
-    font-size: 26px;
-  }
+.canvas[data-layout='portrait'] .footer-partners {
+  width: 100%;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.canvas[data-layout='portrait'] .grade-prices {
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas[data-layout='portrait'] .topbar,
+.canvas[data-layout='portrait'] .footer {
+  padding: 12px 16px;
 }
