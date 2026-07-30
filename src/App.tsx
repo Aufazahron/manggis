@@ -39,10 +39,6 @@ import './App.css'
 
 type LayoutMode = 'landscape' | 'portrait'
 
-/** Desain referensi TV 16:9 — di-scale ke visualViewport (abaikan chrome browser). */
-const CANVAS_WIDTH = 1920
-const CANVAS_HEIGHT = 1080
-
 const SUMMARY_ICONS: Record<(typeof summaryStats)[number]['tone'], LucideIcon> = {
   violet: Weight,
   sky: Truck,
@@ -162,10 +158,9 @@ export default function App() {
   const [now, setNow] = useState<Date | null>(null)
   const [focusedGrade, setFocusedGrade] = useState<GradeId | null>(null)
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('landscape')
-  const [scale, setScale] = useState(1)
   const [viewportBox, setViewportBox] = useState({
-    width: CANVAS_WIDTH,
-    height: CANVAS_HEIGHT,
+    width: typeof window !== 'undefined' ? window.innerWidth : 1920,
+    height: typeof window !== 'undefined' ? window.innerHeight : 1080,
     offsetTop: 0,
     offsetLeft: 0,
   })
@@ -184,13 +179,9 @@ export default function App() {
     const updateLayout = () => {
       const box = getViewportSize()
       const mode = resolveLayoutMode(box.width, box.height)
-      // Contain-fit + buffer kecil untuk rounding / chrome TV yang tidak akurat
-      const nextScale =
-        Math.min(box.width / CANVAS_WIDTH, box.height / CANVAS_HEIGHT) * 0.992
 
       setLayoutMode(mode)
       setViewportBox(box)
-      setScale(nextScale)
 
       const root = document.documentElement
       root.dataset.layout = mode
@@ -199,7 +190,6 @@ export default function App() {
       root.style.setProperty('--vv-height', `${box.height}px`)
       root.style.setProperty('--vv-top', `${box.offsetTop}px`)
       root.style.setProperty('--vv-left', `${box.offsetLeft}px`)
-      root.style.setProperty('--canvas-scale', String(nextScale))
     }
 
     updateLayout()
@@ -215,13 +205,12 @@ export default function App() {
     }
   }, [])
 
+  // Landscape: isi penuh area terlihat (tanpa letterbox / gap kiri-kanan)
   const landscapeStyle =
     layoutMode === 'landscape'
       ? ({
-          width: CANVAS_WIDTH,
-          height: CANVAS_HEIGHT,
-          // CSS zoom aman untuk hardware video decoder di WebView / Coocaa
-          zoom: scale,
+          width: '100%',
+          height: '100%',
         } as CSSProperties)
       : undefined
 
