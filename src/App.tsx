@@ -1,218 +1,429 @@
-import { useEffect, useState } from 'react'
 import {
-  activities,
-  farmMeta,
-  inventory,
-  kpis,
-  shipments,
-  weather,
-} from './data'
-import { GradeChart, ProductionChart } from './components/Charts'
+  Calendar,
+  ChevronRight,
+  Clock,
+  Crown,
+  Globe,
+  Leaf,
+  Mail,
+  Package,
+  ShieldCheck,
+  Star,
+  TrendingDown,
+  TrendingUp,
+  Truck,
+  Weight,
+  type LucideIcon,
+} from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { GradeChart, PriceTrendChart } from './components/Charts'
 import { VideoCarousel } from './components/VideoCarousel'
+import {
+  CONTACT_EMAIL,
+  exportDestinations,
+  exportNeeds,
+  EXPORT_TOTAL_TON,
+  footerItems,
+  formatClock,
+  formatDateId,
+  formatPrice,
+  gradeLabel,
+  GRADE_PRICES,
+  insightMetrics,
+  isGradeFocused,
+  partnerLogos,
+  summaryStats,
+  type GradeId,
+} from './data'
 import './App.css'
 
-function useClock() {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 1000)
-    return () => window.clearInterval(id)
-  }, [])
-  return now
+type LayoutMode = 'landscape' | 'portrait'
+
+const SUMMARY_ICONS: Record<(typeof summaryStats)[number]['tone'], LucideIcon> = {
+  violet: Weight,
+  sky: Truck,
+  emerald: Leaf,
+  amber: TrendingUp,
 }
 
-function statusClass(status: string) {
-  if (status === 'Terkirim') return 'tag ok'
-  if (status === 'Dalam perjalanan') return 'tag move'
-  if (status === 'Siap kirim') return 'tag ready'
-  return 'tag pack'
+const GRADE_ICONS: Record<GradeId, LucideIcon> = {
+  A: Crown,
+  B: Leaf,
+  C: Star,
+}
+
+function getViewportSize() {
+  const vv = typeof window !== 'undefined' ? window.visualViewport : null
+  return {
+    width: Math.max(1, Math.floor(vv?.width ?? window.innerWidth)),
+    height: Math.max(1, Math.floor(vv?.height ?? window.innerHeight)),
+  }
+}
+
+function resolveLayoutMode(width: number, height: number): LayoutMode {
+  // Target utama: horizontal. Stack portrait hanya bila layar tegak & relatif sempit.
+  const isLandscape = width >= height
+  const isWideEnough = width >= 1024
+  if (isLandscape || isWideEnough) return 'landscape'
+  return 'portrait'
+}
+
+function Card({ children, className = '' }: { children: ReactNode; className?: string }) {
+  return <article className={`card ${className}`.trim()}>{children}</article>
+}
+
+function SectionHeader({
+  icon: Icon,
+  title,
+  subtitle,
+}: {
+  icon: LucideIcon
+  title: string
+  subtitle?: string
+}) {
+  return (
+    <div className="section-head">
+      <div className="section-head-row">
+        <Icon className="section-icon" strokeWidth={2} />
+        <h2>{title}</h2>
+      </div>
+      {subtitle ? <p>{subtitle}</p> : null}
+    </div>
+  )
+}
+
+function ExportDestinationsCard() {
+  const [selectedIndex, setSelectedIndex] = useState<number | undefined>(undefined)
+  const [hoverIndex, setHoverIndex] = useState<number | undefined>(undefined)
+  const activeIndex = hoverIndex ?? selectedIndex
+
+  return (
+    <Card className="dest-card">
+      <SectionHeader
+        icon={Globe}
+        title="Tujuan Ekspor Utama"
+        subtitle="Volume tahunan (UN Comtrade 2024)"
+      />
+      <ul className="dest-list">
+        {exportDestinations.map((dest, index) => (
+          <li key={dest.country}>
+            <button
+              type="button"
+              onMouseEnter={() => setHoverIndex(index)}
+              onMouseLeave={() => setHoverIndex(undefined)}
+              onClick={() =>
+                setSelectedIndex((current) => (current === index ? undefined : index))
+              }
+              className={`dest-item ${activeIndex === index ? 'active' : ''}`}
+            >
+              <span className="dest-item-top">
+                <span className="dest-country">
+                  <span className="dest-flag">
+                    <img src={dest.flagSrc} alt="" />
+                  </span>
+                  {dest.country}
+                </span>
+                <ChevronRight className="dest-chevron" strokeWidth={2} />
+              </span>
+              {activeIndex === index ? (
+                <span className="dest-detail">
+                  <span>
+                    Volume: <strong>{dest.volume}</strong>
+                  </span>
+                  <span>{dest.share}% dari total ekspor nasional</span>
+                </span>
+              ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  )
 }
 
 export default function App() {
-  const now = useClock()
-  const dateLabel = now.toLocaleDateString('id-ID', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-  const timeLabel = now.toLocaleTimeString('id-ID', {
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  const [now, setNow] = useState<Date | null>(null)
+  const [focusedGrade, setFocusedGrade] = useState<GradeId | null>(null)
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('landscape')
+
+  const toggleGradeFocus = (gradeId: GradeId) => {
+    setFocusedGrade((current) => (current === gradeId ? null : gradeId))
+  }
+
+  useEffect(() => {
+    setNow(new Date())
+    const tick = window.setInterval(() => setNow(new Date()), 60000)
+    return () => window.clearInterval(tick)
+  }, [])
+
+  useEffect(() => {
+    const updateLayout = () => {
+      const { width, height } = getViewportSize()
+      const mode = resolveLayoutMode(width, height)
+      setLayoutMode(mode)
+      document.documentElement.dataset.layout = mode
+      document.body.dataset.layout = mode
+    }
+    updateLayout()
+    window.addEventListener('resize', updateLayout)
+    window.addEventListener('orientationchange', updateLayout)
+    window.visualViewport?.addEventListener('resize', updateLayout)
+    window.visualViewport?.addEventListener('scroll', updateLayout)
+    return () => {
+      window.removeEventListener('resize', updateLayout)
+      window.removeEventListener('orientationchange', updateLayout)
+      window.visualViewport?.removeEventListener('resize', updateLayout)
+      window.visualViewport?.removeEventListener('scroll', updateLayout)
+    }
+  }, [])
 
   return (
-    <div className="tv">
-      <div className="bg-glow" aria-hidden />
-      <div className="bg-leaf" aria-hidden />
-
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-mark" aria-hidden>
-            <span />
+    <div className="viewport" data-layout={layoutMode}>
+      <div className="canvas" data-layout={layoutMode}>
+        <header className="topbar">
+          <div className="brand">
+            <h1>Dashboard Monitoring Manggis</h1>
+            <p>Sortasi, Harga, Tren, dan Kebutuhan Ekspor</p>
           </div>
-          <div>
-            <h1>{farmMeta.name}</h1>
-            <p>
-              {farmMeta.estate} · {farmMeta.region}
-            </p>
-          </div>
-        </div>
-
-        <div className="season-chip">{farmMeta.season}</div>
-
-        <div className="clock">
-          <strong>{timeLabel}</strong>
-          <span>{dateLabel}</span>
-        </div>
-      </header>
-
-      <section className="kpi-row">
-        {kpis.map((k) => (
-          <article key={k.id} className="kpi">
-            <span className="kpi-label">{k.label}</span>
-            <div className="kpi-value">
-              <strong>{k.value}</strong>
-              <em>{k.unit}</em>
-            </div>
-            <div className={`kpi-delta ${k.positive ? 'up' : 'down'}`}>
-              {k.delta}
-              <span>{k.hint}</span>
-            </div>
-          </article>
-        ))}
-      </section>
-
-      <main className="grid-main">
-        <ProductionChart />
-        <VideoCarousel />
-        <GradeChart />
-      </main>
-
-      <section className="grid-bottom">
-        <article className="panel inventory-panel">
-          <div className="panel-head">
+          <div className="clock">
             <div>
-              <h2>Stok per Lokasi</h2>
-              <p>Cold storage & packing hall</p>
+              <Calendar className="clock-icon" strokeWidth={2} />
+              <span>{now ? formatDateId(now) : '-'}</span>
+            </div>
+            <div>
+              <Clock className="clock-icon" strokeWidth={2} />
+              <span>{now ? formatClock(now) : '-'}</span>
             </div>
           </div>
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Lokasi</th>
-                <th>A</th>
-                <th>B</th>
-                <th>C</th>
-                <th>Total</th>
-                <th>Kapasitas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inventory.map((row) => {
-                const pct = Math.round((row.total / row.kapasitas) * 100)
+        </header>
+
+        <main className="main-grid">
+          <div className="row-top">
+            <Card className="video-card">
+              <VideoCarousel />
+            </Card>
+
+            <Card className="trend-card">
+              <PriceTrendChart focusedGrade={focusedGrade} onGradeFocus={toggleGradeFocus} />
+            </Card>
+
+            <div className="grade-prices">
+              {GRADE_PRICES.map((grade) => {
+                const Icon = GRADE_ICONS[grade.id]
+                const isFocused = focusedGrade === grade.id
+                const isDimmed = focusedGrade !== null && !isFocused
+
                 return (
-                  <tr key={row.lokasi}>
-                    <td>{row.lokasi}</td>
-                    <td>{row.gradeA.toLocaleString('id-ID')}</td>
-                    <td>{row.gradeB.toLocaleString('id-ID')}</td>
-                    <td>{row.gradeC.toLocaleString('id-ID')}</td>
-                    <td>
-                      <div className="cap">
-                        <strong>{row.total.toLocaleString('id-ID')} kg</strong>
-                        <div className="cap-bar">
-                          <i style={{ width: `${pct}%` }} />
-                        </div>
-                      </div>
-                    </td>
-                    <td>{pct}%</td>
-                  </tr>
+                  <button
+                    key={grade.id}
+                    type="button"
+                    onClick={() => toggleGradeFocus(grade.id)}
+                    className={`grade-price ${isFocused ? 'focused' : ''} ${
+                      isDimmed ? 'dimmed' : ''
+                    }`}
+                  >
+                    <div className="grade-price-media">
+                      <img
+                        src={grade.image}
+                        alt={grade.label}
+                        style={{ objectPosition: grade.imagePosition }}
+                      />
+                      <span className={`grade-badge ${grade.badgeClass}`}>
+                        <Icon strokeWidth={2.5} />
+                        {grade.badgeLabel}
+                      </span>
+                    </div>
+                    <div className={`grade-price-bar ${grade.barClass}`}>
+                      <span>{grade.label}</span>
+                      <strong>{formatPrice(grade.price)}/kg</strong>
+                    </div>
+                  </button>
                 )
               })}
-            </tbody>
-          </table>
-        </article>
-
-        <article className="panel ship-panel">
-          <div className="panel-head">
-            <div>
-              <h2>Pengiriman Hari Ini</h2>
-              <p>Status outbound logistics</p>
             </div>
           </div>
-          <ul className="ship-list">
-            {shipments.map((s) => (
-              <li key={s.id}>
+
+          <div className="row-bottom">
+            <Card className="summary-card">
+              <SectionHeader
+                icon={Package}
+                title="Ringkasan Nasional"
+                subtitle="Komoditas manggis Indonesia (BPS/Kementan 2024)"
+              />
+              <div className="summary-grid">
+                {summaryStats.map((stat) => {
+                  const Icon = SUMMARY_ICONS[stat.tone]
+                  return (
+                    <div key={stat.label} className="summary-item">
+                      <div className={`summary-icon tone-${stat.tone}`}>
+                        <Icon strokeWidth={2} />
+                      </div>
+                      <p className="summary-label">{stat.label}</p>
+                      <p className={`summary-value tone-${stat.tone}`}>{stat.value}</p>
+                      <p className="summary-hint">{stat.hint}</p>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+
+            <Card className="export-card">
+              <SectionHeader
+                icon={Globe}
+                title="Kebutuhan Jumlah Ekspor"
+                subtitle={
+                  focusedGrade
+                    ? `Estimasi per grade (BPS 2024), fokus ${gradeLabel(focusedGrade)}`
+                    : 'Estimasi komposisi per grade (BPS 2024)'
+                }
+              />
+
+              <div className="export-stack">
+                <p className="export-total-label">
+                  Komposisi total {EXPORT_TOTAL_TON.toLocaleString('id-ID')} ton
+                </p>
+                <div className="export-bar">
+                  {exportNeeds.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => toggleGradeFocus(item.gradeId)}
+                      style={{
+                        width: `${item.percent}%`,
+                        backgroundColor: item.color,
+                        opacity: isGradeFocused(item.gradeId, focusedGrade) ? 1 : 0.25,
+                      }}
+                      title={`${item.label}: ${item.value}`}
+                    />
+                  ))}
+                </div>
+                <div className="export-legend">
+                  {exportNeeds.map((item) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => toggleGradeFocus(item.gradeId)}
+                      className={isGradeFocused(item.gradeId, focusedGrade) ? '' : 'dimmed'}
+                    >
+                      <i style={{ backgroundColor: item.color }} />
+                      {item.label} {item.percent}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="export-rows">
+                {exportNeeds.map((item) => {
+                  const isFocused = focusedGrade === item.gradeId
+                  const isDimmed = focusedGrade !== null && !isFocused
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => toggleGradeFocus(item.gradeId)}
+                      className={`export-row ${isFocused ? 'focused' : ''} ${
+                        isDimmed ? 'dimmed' : ''
+                      }`}
+                    >
+                      <div className="export-row-top">
+                        <span>{item.label}</span>
+                        <strong>{item.value}</strong>
+                      </div>
+                      <div className="export-row-track">
+                        <div
+                          style={{
+                            width: `${item.percent}%`,
+                            backgroundColor: item.color,
+                            opacity: isGradeFocused(item.gradeId, focusedGrade) ? 1 : 0.35,
+                          }}
+                        />
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+
+              <div className="export-footer">
+                Total Ekspor Nasional 2024:{' '}
+                <strong>{EXPORT_TOTAL_TON.toLocaleString('id-ID')} ton</strong>
+              </div>
+            </Card>
+
+            <div className="dest-wrap">
+              <ExportDestinationsCard />
+            </div>
+
+            <Card className="grade-card">
+              <GradeChart focusedGrade={focusedGrade} onGradeFocus={toggleGradeFocus} />
+            </Card>
+
+            <Card className="insight-card">
+              <SectionHeader
+                icon={TrendingUp}
+                title="Insight Performa"
+                subtitle="Pergerakan sepanjang 2026"
+              />
+              <div className="insight-list">
+                {insightMetrics.map((metric) => {
+                  const TrendIcon = metric.up ? TrendingUp : TrendingDown
+                  const tone = metric.value.startsWith('-') ? 'down' : 'up'
+                  return (
+                    <div key={metric.label} className="insight-row">
+                      <div>
+                        <p>{metric.label}</p>
+                        <span>{metric.comparison}</span>
+                      </div>
+                      <div className={`insight-value ${tone}`}>
+                        <strong>{metric.value}</strong>
+                        <TrendIcon strokeWidth={2.5} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </Card>
+          </div>
+        </main>
+
+        <footer className="footer">
+          <div className="footer-brand">
+            <span className="footer-accent" aria-hidden />
+            <div>
+              <p>Manggis Indonesia</p>
+              <span>Berkualitas, Mendunia.</span>
+            </div>
+          </div>
+
+          {footerItems.map((item) => {
+            const Icon = item.icon === 'shield' ? ShieldCheck : Globe
+            return (
+              <div key={item.title} className="footer-feature">
+                <div className="footer-feature-icon">
+                  <Icon strokeWidth={2} />
+                </div>
                 <div>
-                  <strong>{s.id}</strong>
-                  <span>{s.tujuan}</span>
-                </div>
-                <b>{s.volume}</b>
-                <em className={statusClass(s.status)}>{s.status}</em>
-                <span className="eta">{s.eta}</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <aside className="side-stack">
-          <article className="panel weather-panel">
-            <div className="panel-head">
-              <div>
-                <h2>Kondisi Kebun</h2>
-                <p>{weather.status}</p>
-              </div>
-            </div>
-            <div className="weather-grid">
-              <div>
-                <span>Suhu</span>
-                <strong>{weather.temp}°C</strong>
-              </div>
-              <div>
-                <span>Kelembaban</span>
-                <strong>{weather.humidity}%</strong>
-              </div>
-              <div>
-                <span>Hujan</span>
-                <strong>{weather.rainChance}%</strong>
-              </div>
-              <div>
-                <span>Angin</span>
-                <strong>{weather.wind} km/j</strong>
-              </div>
-              <div className="wide">
-                <span>Kelembaban Tanah</span>
-                <div className="soil">
-                  <i style={{ width: `${weather.soilMoisture}%` }} />
-                  <b>{weather.soilMoisture}%</b>
+                  <p>{item.title}</p>
+                  <span>{item.subtitle}</span>
                 </div>
               </div>
-            </div>
-          </article>
+            )
+          })}
 
-          <article className="panel activity-panel">
-            <div className="panel-head">
-              <div>
-                <h2>Aktivitas Terbaru</h2>
-                <p>Update operasional real-time</p>
-              </div>
-            </div>
-            <ul className="activity-list">
-              {activities.map((a) => (
-                <li key={`${a.time}-${a.text}`} className={`act-${a.type}`}>
-                  <time>{a.time}</time>
-                  <p>{a.text}</p>
-                </li>
+          <div className="footer-partners">
+            <div className="partner-box">
+              {partnerLogos.map((logo) => (
+                <div key={logo.alt} className="partner-logo">
+                  <img src={logo.src} alt={logo.alt} />
+                </div>
               ))}
-            </ul>
-          </article>
-        </aside>
-      </section>
-
-      <footer className="footer">
-        <span>Dashboard Produksi Manggis · Dtech Edge Innovations</span>
-        <span>Auto-refresh visual · Optimasi layar TV 43"</span>
-      </footer>
+            </div>
+            <a className="footer-mail" href={`mailto:${CONTACT_EMAIL}`}>
+              <Mail strokeWidth={2} />
+              <span>{CONTACT_EMAIL}</span>
+            </a>
+          </div>
+        </footer>
+      </div>
     </div>
   )
 }
