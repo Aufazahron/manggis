@@ -1,6 +1,5 @@
 import {
   Calendar,
-  ChevronRight,
   Clock,
   Crown,
   Globe,
@@ -9,18 +8,17 @@ import {
   Package,
   ShieldCheck,
   Star,
-  TrendingDown,
   TrendingUp,
   Truck,
   Weight,
   type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { GradeChart, PriceTrendChart } from './components/Charts'
+import { PriceTrendChart } from './components/Charts'
+import { CountingPanel } from './components/CountingPanel'
 import { VideoCarousel } from './components/VideoCarousel'
 import {
   CONTACT_EMAIL,
-  exportDestinations,
   exportNeeds,
   EXPORT_TOTAL_TON,
   footerItems,
@@ -29,7 +27,6 @@ import {
   formatPrice,
   gradeLabel,
   GRADE_PRICES,
-  insightMetrics,
   isGradeFocused,
   partnerLogos,
   summaryStats,
@@ -65,7 +62,6 @@ function getViewportSize() {
     window.innerHeight,
   ].filter((n): n is number => typeof n === 'number' && n > 0)
 
-  // Ambil nilai terkecil agar chrome browser TV tidak membuat konten overflow
   return {
     width: Math.max(1, Math.floor(Math.min(...widths))),
     height: Math.max(1, Math.floor(Math.min(...heights))),
@@ -102,55 +98,6 @@ function SectionHeader({
       </div>
       {subtitle ? <p>{subtitle}</p> : null}
     </div>
-  )
-}
-
-function ExportDestinationsCard() {
-  const [selectedIndex, setSelectedIndex] = useState<number | undefined>(undefined)
-  const [hoverIndex, setHoverIndex] = useState<number | undefined>(undefined)
-  const activeIndex = hoverIndex ?? selectedIndex
-
-  return (
-    <Card className="dest-card">
-      <SectionHeader
-        icon={Globe}
-        title="Tujuan Ekspor Utama"
-        subtitle="Volume tahunan (UN Comtrade 2024)"
-      />
-      <ul className="dest-list">
-        {exportDestinations.map((dest, index) => (
-          <li key={dest.country}>
-            <button
-              type="button"
-              onMouseEnter={() => setHoverIndex(index)}
-              onMouseLeave={() => setHoverIndex(undefined)}
-              onClick={() =>
-                setSelectedIndex((current) => (current === index ? undefined : index))
-              }
-              className={`dest-item ${activeIndex === index ? 'active' : ''}`}
-            >
-              <span className="dest-item-top">
-                <span className="dest-country">
-                  <span className="dest-flag">
-                    <img src={dest.flagSrc} alt="" />
-                  </span>
-                  {dest.country}
-                </span>
-                <ChevronRight className="dest-chevron" strokeWidth={2} />
-              </span>
-              {activeIndex === index ? (
-                <span className="dest-detail">
-                  <span>
-                    Volume: <strong>{dest.volume}</strong>
-                  </span>
-                  <span>{dest.share}% dari total ekspor nasional</span>
-                </span>
-              ) : null}
-            </button>
-          </li>
-        ))}
-      </ul>
-    </Card>
   )
 }
 
@@ -205,7 +152,6 @@ export default function App() {
     }
   }, [])
 
-  // Landscape: isi penuh area terlihat (tanpa letterbox / gap kiri-kanan)
   const landscapeStyle =
     layoutMode === 'landscape'
       ? ({
@@ -399,39 +345,7 @@ export default function App() {
               </div>
             </Card>
 
-            <div className="dest-wrap">
-              <ExportDestinationsCard />
-            </div>
-
-            <Card className="grade-card">
-              <GradeChart focusedGrade={focusedGrade} onGradeFocus={toggleGradeFocus} />
-            </Card>
-
-            <Card className="insight-card">
-              <SectionHeader
-                icon={TrendingUp}
-                title="Insight Performa"
-                subtitle="Pergerakan sepanjang 2026"
-              />
-              <div className="insight-list">
-                {insightMetrics.map((metric) => {
-                  const TrendIcon = metric.up ? TrendingUp : TrendingDown
-                  const tone = metric.value.startsWith('-') ? 'down' : 'up'
-                  return (
-                    <div key={metric.label} className="insight-row">
-                      <div>
-                        <p>{metric.label}</p>
-                        <span>{metric.comparison}</span>
-                      </div>
-                      <div className={`insight-value ${tone}`}>
-                        <strong>{metric.value}</strong>
-                        <TrendIcon strokeWidth={2.5} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </Card>
+            <CountingPanel />
           </div>
         </main>
 

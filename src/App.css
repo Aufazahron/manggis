@@ -269,20 +269,9 @@ img {
   grid-column: span 3;
 }
 
-.dest-wrap {
-  grid-column: span 2;
+.counting-card {
+  grid-column: span 6;
   min-height: 0;
-}
-
-.dest-card,
-.grade-card,
-.insight-card {
-  height: 100%;
-}
-
-.grade-card,
-.insight-card {
-  grid-column: span 2;
 }
 
 .canvas[data-layout='portrait'] .video-card,
@@ -290,9 +279,7 @@ img {
 .canvas[data-layout='portrait'] .grade-prices,
 .canvas[data-layout='portrait'] .summary-card,
 .canvas[data-layout='portrait'] .export-card,
-.canvas[data-layout='portrait'] .dest-wrap,
-.canvas[data-layout='portrait'] .grade-card,
-.canvas[data-layout='portrait'] .insight-card {
+.canvas[data-layout='portrait'] .counting-card {
   grid-column: 1 / -1;
   height: auto;
   min-height: 0;
@@ -316,12 +303,8 @@ img {
   min-height: 88px;
 }
 
-.canvas[data-layout='portrait'] .grade-card .grade-body {
-  min-height: 180px;
-}
-
-.canvas[data-layout='portrait'] .dest-list {
-  min-height: auto;
+.canvas[data-layout='portrait'] .counting-card {
+  min-height: 220px;
 }
 
 .section-head {
@@ -931,240 +914,113 @@ img {
   font-size: 16px;
 }
 
-/* Destinations */
-.dest-list {
+/* Counting Manggis (MQTT) */
+.counting-head {
   display: flex;
-  min-height: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.dest-list > li {
-  display: flex;
-  flex: 1;
-}
-
-.dest-item {
-  display: flex;
-  width: 100%;
-  height: 100%;
-  flex-direction: column;
-  justify-content: center;
-  border-radius: 8px;
-  border: 1px solid #f1f5f9;
-  padding: 8px 12px;
-  text-align: left;
-  transition: background 0.15s ease, border-color 0.15s ease;
-}
-
-.dest-item:hover {
-  border-color: #e2e8f0;
-  background: #f8fafc;
-}
-
-.dest-item.active {
-  border-color: #a7f3d0;
-  background: #ecfdf5;
-  box-shadow: inset 0 0 0 1px #a7f3d0;
-}
-
-.dest-item-top {
-  display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-}
-
-.dest-country {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #334155;
-}
-
-.dest-flag {
-  position: relative;
-  width: 24px;
-  height: 16px;
-  flex-shrink: 0;
-  overflow: hidden;
-  border-radius: 3px;
-  box-shadow: inset 0 0 0 1px #e2e8f0;
-}
-
-.dest-flag img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.dest-chevron {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  color: #94a3b8;
-}
-
-.dest-item.active .dest-chevron {
-  color: #059669;
-}
-
-.dest-detail {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
-  border-top: 1px solid #d1fae5;
-  padding-top: 8px;
-  font-size: 12px;
-  color: #475569;
-}
-
-.dest-detail strong {
-  color: #1e293b;
-}
-
-/* Grade distribution */
-.grade-body {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  align-items: center;
-  justify-content: center;
   gap: 12px;
 }
 
-.grade-chart {
-  position: relative;
-  width: 140px;
-  height: 140px;
-  flex-shrink: 0;
-}
-
-.grade-center {
-  pointer-events: none;
-  position: absolute;
-  inset: 0;
+.counting-meta {
   display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.counting-meta p {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.counting-status {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.grade-list {
-  display: grid;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.grade-item {
-  width: 100%;
-  border-radius: 6px;
-  padding: 6px 8px;
-  text-align: left;
-  transition: background 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
-}
-
-.grade-item:hover {
-  background: #f8fafc;
-}
-
-.grade-item.active {
-  background: #f1f5f9;
-  box-shadow: inset 0 0 0 1px #e2e8f0;
-}
-
-.grade-item.dimmed {
-  opacity: 0.4;
-}
-
-.grade-item-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.grade-item-row i {
-  width: 12px;
-  height: 12px;
-  flex-shrink: 0;
+  gap: 6px;
   border-radius: 999px;
-}
-
-.grade-item-row em {
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f1f5f9;
   color: #475569;
 }
 
-.grade-item-row strong {
-  color: #0f172a;
+.counting-status i {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
 }
 
-.grade-item-hint {
-  display: block;
-  margin-top: 4px;
-  padding-left: 20px;
-  font-size: 10px;
-  color: #94a3b8;
+.counting-status.status-connected {
+  background: #ecfdf5;
+  color: #047857;
 }
 
-/* Insight */
-.insight-list {
+.counting-status.status-connecting {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.counting-status.status-disconnected {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.counting-body {
   display: flex;
+  flex: 1;
   min-height: 0;
-  flex: 1;
+  align-items: center;
+  justify-content: center;
+}
+
+.counting-value-wrap {
+  position: relative;
+  display: flex;
   flex-direction: column;
-}
-
-.insight-row {
-  display: flex;
-  flex: 1;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  border-bottom: 1px solid #f1f5f9;
+  justify-content: center;
+  width: min(100%, 420px);
+  border-radius: 16px;
+  border: 1px solid #d1fae5;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 20%, rgba(16, 185, 129, 0.12), transparent 65%),
+    #f8fafc;
+  padding: clamp(16px, 2.5vh, 28px) 20px;
+  text-align: center;
 }
 
-.insight-row:last-child {
-  border-bottom: 0;
-}
-
-.insight-row p {
-  font-size: 12px;
-  font-weight: 500;
-  color: #334155;
-}
-
-.insight-row span {
-  font-size: 10px;
-  color: #94a3b8;
-}
-
-.insight-value {
-  display: flex;
-  flex-shrink: 0;
-  align-items: center;
-  gap: 6px;
-}
-
-.insight-value strong {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.insight-value svg {
-  width: 16px;
-  height: 16px;
-}
-
-.insight-value.up {
+.counting-accent {
+  width: clamp(22px, 2.2vw, 28px);
+  height: clamp(22px, 2.2vw, 28px);
+  margin-bottom: 8px;
   color: #059669;
 }
 
-.insight-value.down {
-  color: #dc2626;
+.counting-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.counting-value {
+  margin-top: 4px;
+  font-size: clamp(42px, 5vw + 1.5vh, 72px);
+  line-height: 1;
+  font-weight: 700;
+  color: #0f2e22;
+  font-variant-numeric: tabular-nums;
+}
+
+.counting-unit {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #64748b;
 }
 
 /* Footer */

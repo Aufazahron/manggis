@@ -58,7 +58,6 @@ export const trendData = [
   { month: 'Jul', gradeA: 52000, gradeB: 35000, gradeC: 12000 },
 ]
 
-export const GRADE_SHARE = { A: 48, B: 32, C: 20 } as const
 export const EXPORT_SHARE = { A: 65, B: 30, C: 5 } as const
 export const EXPORT_TOTAL_TON = 96000
 export const NATIONAL_PRODUCTION_TON = 416753
@@ -101,21 +100,6 @@ export const summaryStats = [
   },
 ] as const
 
-export const exportDestinations = [
-  { country: 'Tiongkok', flagSrc: '/flags/cn.png', volume: '47.800 ton', share: '50' },
-  { country: 'Hongkong', flagSrc: '/flags/hk.png', volume: '5.200 ton', share: '5' },
-  { country: 'Uni Emirat Arab', flagSrc: '/flags/ae.png', volume: '1.000 ton', share: '1' },
-  { country: 'Prancis', flagSrc: '/flags/fr.png', volume: '191 ton', share: '<1' },
-  { country: 'Belanda', flagSrc: '/flags/nl.png', volume: '134 ton', share: '<1' },
-]
-
-export const gradeDistribution = (['A', 'B', 'C'] as const).map((gradeId) => ({
-  gradeId,
-  name: GRADE_LABELS[gradeId],
-  value: GRADE_SHARE[gradeId],
-  color: gradeId === 'A' ? COLOR_A : gradeId === 'B' ? COLOR_B : COLOR_C,
-}))
-
 export const partnerLogos = [
   { src: '/upi.png', alt: 'Universitas Pendidikan Indonesia' },
   { src: '/d-tech.png', alt: 'DTECH Edge Innovation' },
@@ -126,13 +110,6 @@ export const CONTACT_EMAIL = 'dtech.inno@gmail.com'
 export const footerItems = [
   { title: 'Kualitas Terjaga', subtitle: 'Sortasi & QC Ketat', icon: 'shield' as const },
   { title: 'Pasar Global Terpercaya', subtitle: 'Buah Manggis Indonesia', icon: 'globe' as const },
-]
-
-export const insightMetrics = [
-  { label: 'Harga Grade A', value: '+8,3%', comparison: 'Juli vs Februari 2026', up: true },
-  { label: 'Harga Grade B', value: '+9,4%', comparison: 'Juli vs Februari 2026', up: true },
-  { label: 'Harga Grade C', value: '+20,0%', comparison: 'Juli vs Februari 2026', up: true },
-  { label: 'Volume Ekspor', value: '-77,7%', comparison: 'Awal 2026 dibanding 2025', up: false },
 ]
 
 export const PROCESS_VIDEOS = [
